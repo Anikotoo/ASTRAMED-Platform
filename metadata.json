@@ -1,0 +1,6 @@
+{
+  "name": "ASTRAMED — Astronaut Health & Research Platform",
+  "description": "Advanced astronaut health monitoring, scientific research discovery, interactive 3D musculoskeletal mapping, and AI-assisted mission decision support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
