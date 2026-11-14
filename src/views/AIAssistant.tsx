@@ -4,7 +4,8 @@ import {
   CrewMember,
   HealthReading,
   HealthAlert,
-  AIChatMessage
+  AIChatMessage,
+  ResearchStudy
 } from '../types/astramed';
 
 import {
@@ -30,57 +31,8 @@ interface AIAssistantProps {
     params?: Record<string, string>;
   }) => void;
   initialPrompt?: string;
+  selectedStudy?: ResearchStudy | null;
 }
-
-const KEYWORD_BANK: Record<string, string[]> = {
-  heartRate: ['heart rate', 'pulse', 'bpm'],
-  bloodPressure: ['blood pressure', 'bp', 'systolic', 'diastolic'],
-  oxygen: ['oxygen', 'spo2', 'saturation'],
-  temperature: ['temperature', 'body temperature'],
-  muscle: ['muscle', 'atrophy', 'muscle loss'],
-  bone: ['bone', 'bone loss', 'bone density'],
-  radiation: ['radiation', 'exposure', 'cosmic rays'],
-  microgravity: ['microgravity', 'weightlessness', 'zero gravity'],
-  alerts: ['alerts', 'warnings', 'critical', 'risk'],
-  crew: ['crew', 'astronaut', 'commander', 'astronaut profile']
-};
-
-const NAVIGATION_KEYWORDS = [
-  'navigate',
-  'go to',
-  'open section',
-  'open dashboard',
-  'take me to',
-  'switch to',
-  'show dashboard',
-  'show health trends',
-  'open research library',
-  'enter readings'
-];
-
-const normalize = (value: string) =>
-  value.toLowerCase().replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ').trim();
-
-const findSupportedCategories = (message: string): string[] => {
-  const query = normalize(message);
-  const matched: string[] = [];
-
-  Object.entries(KEYWORD_BANK).forEach(([category, keywords]) => {
-    const found = keywords.some(keyword => {
-      const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      return new RegExp(`(^|\\s)${escaped}(?=$|\\s)`, 'i').test(query);
-    });
-
-    if (found) matched.push(category);
-  });
-
-  return matched;
-};
-
-const isNavigationRequest = (message: string) => {
-  const query = normalize(message);
-  return NAVIGATION_KEYWORDS.some(keyword => query.includes(keyword));
-};
 
 const createAssistantMessage = (text: string): AIChatMessage => ({
   id: `ast_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -95,7 +47,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   readings,
   alerts,
   onExecuteAction,
-  initialPrompt
+  initialPrompt,
+  selectedStudy
 }) => {
   const [messages, setMessages] = useState<AIChatMessage[]>([
     {
@@ -194,22 +147,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
     if (!textToSend) setInputPrompt('');
 
-    const categories = findSupportedCategories(query);
-    const navigation = isNavigationRequest(query);
-
-    // Reject unsupported topics before contacting the backend.
-    if (categories.length === 0 && !navigation) {
-      setMessages(prev => [
-        ...prev,
-        createAssistantMessage(
-          'This topic is outside my current knowledge base.\n\n' +
-          'I currently support only 10 categories: heart rate, blood pressure, ' +
-          'oxygen, temperature, muscle health, bone health, radiation, ' +
-          'microgravity, health alerts and crew profiles.'
-        )
-      ]);
-      return;
-    }
+    const conversationHistory = messages
+      .filter(msg => msg.sender === 'user' || (msg.sender === 'assistant' && msg.id !== 'welcome_1'))
+      .slice(-12)
+      .map(msg => ({ role: msg.sender, content: msg.text }));
 
     loadingRef.current = true;
     setIsLoading(true);
@@ -224,7 +165,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           message: query,
           activeSection,
           activeCrewId: selectedCrew?.id || undefined,
-          activeParam: categories[0] || undefined
+          selectedStudy: selectedStudy || undefined,
+          conversationHistory
         })
       });
 
@@ -343,7 +285,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               </span>
 
               <span className="px-2 py-0.5 rounded text-[10px] font-mono border bg-cyan-950 text-cyan-300 border-cyan-800">
-                RESTRICTED RULE-BASED ENGINE
+                CONTEXT-AWARE AI • SOURCE-TRACKED
               </span>
             </div>
 
@@ -435,6 +377,29 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                       Execute
                       <ArrowRight className="w-3 h-3" />
                     </button>
+                  </div>
+                )}
+
+                {!isUser && msg.provider && (
+                  <div className="mt-3 pt-2 border-t border-slate-800/80 text-[10px] font-mono text-slate-400">
+                    <span className={msg.provider === 'offline' ? 'text-amber-300' : 'text-emerald-300'}>
+                      {msg.provider.toUpperCase()} {msg.model ? `• ${msg.model}` : ''}
+                    </span>
+                    {msg.evidenceType ? ` • ${msg.evidenceType.replace(/_/g, ' ')}` : ''}
+                    {msg.note && <div className="mt-1 text-amber-300">{msg.note}</div>}
+                    {msg.sourceDisclosure && <div className="mt-1">{msg.sourceDisclosure}</div>}
+                    {msg.citations && msg.citations.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        <div className="text-slate-300 uppercase tracking-wide">Available evidence sources</div>
+                        {msg.citations.map((citation, index) => (
+                          <div key={`${msg.id}_source_${index}`} className="text-slate-400">
+                            [{citation.id || index + 1}] {citation.title} — {citation.source}
+                            {citation.doi ? ` • DOI: ${citation.doi}` : ''}
+                            {citation.url && <> • <a href={citation.url} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Open source</a></>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
