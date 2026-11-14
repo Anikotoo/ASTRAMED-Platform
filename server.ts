@@ -213,6 +213,43 @@ function getCrewReadings(
   return newestFirst(readings);
 }
 
+function summarizeReadings(readings: HealthReading[]) {
+  const groups = new Map<string, HealthReading[]>();
+
+  for (const reading of readings) {
+    const key = `${normalize(reading.parameter)}|${normalize(reading.unit)}`;
+    const group = groups.get(key) || [];
+    group.push(reading);
+    groups.set(key, group);
+  }
+
+  return Array.from(groups.values()).map(group => {
+    const ordered = newestFirst(group);
+    const values = ordered
+      .map(item => Number(item.value))
+      .filter(value => Number.isFinite(value));
+    const latest = ordered[0];
+    const earliest = ordered[ordered.length - 1];
+    const delta = latest && earliest
+      ? Number(latest.value) - Number(earliest.value)
+      : null;
+
+    return {
+      parameter: latest?.parameter,
+      unit: latest?.unit || '',
+      recordCount: ordered.length,
+      latestValue: latest?.value,
+      latestTimestamp: latest?.timestamp,
+      earliestValue: earliest?.value,
+      earliestTimestamp: earliest?.timestamp,
+      minimumInIncludedRecords: values.length ? Math.min(...values) : null,
+      maximumInIncludedRecords: values.length ? Math.max(...values) : null,
+      changeFromEarliestIncludedRecord: delta,
+      measurementSources: Array.from(new Set(ordered.map(item => item.source).filter(Boolean)))
+    };
+  });
+}
+
 function formatReading(reading: HealthReading): string {
   return [
     `${reading.parameter}: ${reading.value} ${reading.unit || ''}`.trim(),
@@ -1045,6 +1082,7 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
         selectedParameter: activeParam || null,
         storedReadingCount: readings.length,
         readings: readings.slice(0, 60).map(formatReading),
+        readingSummaries: summarizeReadings(readings.slice(0, 60)),
         importedDatasets: crewDatasets,
         alerts: crewAlerts.map((alert: any) => ({ title: alert.title, severity: alert.severity, parameter: alert.parameter, currentValue: alert.currentValue, thresholdValue: alert.thresholdValue, unit: alert.unit, explanation: alert.explanation, recommendedAction: alert.recommendedAction, timestamp: alert.timestamp, source: alert.source })),
         recentEvents: crewEvents,
