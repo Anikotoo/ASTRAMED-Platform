@@ -1,12 +1,12 @@
+
 import React, { useState } from 'react';
 import { MissionSettings } from '../types/astramed';
-import { 
-  Settings, 
-  Sliders, 
-  Save, 
-  CheckCircle2, 
-  Database, 
-  Radio, 
+import {
+  Settings,
+  Sliders,
+  Save,
+  CheckCircle2,
+  Database,
   ShieldCheck,
   RefreshCw
 } from 'lucide-react';
@@ -14,13 +14,11 @@ import {
 interface SettingsViewProps {
   settings: MissionSettings;
   onUpdateSettings: (newSettings: Partial<MissionSettings>) => Promise<void>;
-  isGeminiActive: boolean;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
-  onUpdateSettings,
-  isGeminiActive
+  onUpdateSettings
 }) => {
   const [formData, setFormData] = useState<MissionSettings>(settings);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -193,16 +191,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <span>Persistent File Storage</span>
               </div>
               <span className="text-emerald-400 font-bold">ONLINE (/data/astramed-db.json)</span>
-            </div>
-
-            <div className="flex items-center justify-between p-2.5 bg-slate-950/60 rounded-lg border border-slate-800">
-              <div className="flex items-center gap-2">
-                <Radio className="w-4 h-4 text-cyan-400" />
-                <span>Gemini AI Intelligence Service</span>
-              </div>
-              <span className={isGeminiActive ? 'text-cyan-300 font-bold' : 'text-slate-400'}>
-                {isGeminiActive ? 'CONNECTED (Gemini 3.8 Flash)' : 'OFFLINE (Space Medicine Fallback)'}
-              </span>
             </div>
 
             <div className="flex items-center justify-between p-2.5 bg-slate-950/60 rounded-lg border border-slate-800">
