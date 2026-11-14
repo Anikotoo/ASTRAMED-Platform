@@ -993,29 +993,6 @@ app.get('/api/local-ai/models', async (_req: Request, res: Response) => {
   }
 });
 
-app.post('/api/local-ai/pull', async (req: Request, res: Response) => {
-  const model = String(req.body?.model || '').trim();
-  if (!model || model.length > 160 || /[\r\n]/.test(model)) {
-    res.status(400).json({ error: 'A valid model name is required.' });
-    return;
-  }
-  try {
-    const response = await ollamaFetch('/api/pull', {
-      method: 'POST',
-      body: JSON.stringify({ name: model, stream: false }),
-      signal: AbortSignal.timeout(30 * 60 * 1000)
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      res.status(502).json({ error: payload.error || `Ollama returned HTTP ${response.status}` });
-      return;
-    }
-    res.json({ success: true, model, result: payload });
-  } catch {
-    res.status(503).json({ error: 'Could not download the model from the local Ollama runtime.' });
-  }
-});
-
 app.post('/api/local-ai/chat', async (req: Request, res: Response) => {
   const model = String(req.body?.model || '').trim();
   const messages = req.body?.messages;
