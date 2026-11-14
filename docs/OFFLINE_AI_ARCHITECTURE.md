@@ -20,8 +20,10 @@ server-dependent path and is not yet an offline local-model integration.
 Application code uses `src/core/ai/runtime.ts`. It defines the common
 contract for model discovery, status, loading and chat generation.
 
-- Desktop: a locally managed inference service may be used. Ollama is one
-  candidate backend; the UI must not depend directly on Ollama's API.
+- Desktop: a locally managed inference service may be used. The first adapter
+  now uses a loopback-only Express bridge to Ollama (`127.0.0.1:11434`). The
+  browser talks only to ASTRAMED's same-origin API, not directly to Ollama.
+  This adapter is a development bridge, not yet a self-contained desktop package.
 - Android: use a mobile-compatible inference backend. The desktop Ollama
   service is not the Android embedding strategy.
 - Model weights must be present on the device before offline operation.
@@ -71,7 +73,7 @@ fit or run at an acceptable speed. Model selection needs real-device tests.
 ## Implementation sequence
 
 1. Add platform-neutral AI and pose runtime contracts. (Current foundation.)
-2. Add a desktop local-model adapter and a controlled model provisioning flow.
+2. Add a desktop local-model adapter and controlled model provisioning flow. (Initial Ollama bridge added; UI selection and local validation remain.)
 3. Add an Android-native inference adapter and compatible quantized model.
 4. Add the pose model adapter for desktop and Android.
 5. Replace the AI Assistant's direct server call with an injected runtime.
@@ -81,5 +83,7 @@ fit or run at an acceptable speed. Model selection needs real-device tests.
 
 ## Current status
 
-This commit establishes interfaces and records constraints. It does not yet
-bundle Ollama, YOLO, model weights, or claim that ASTRAMED runs AI offline.
+This branch establishes interfaces, adds an initial loopback Ollama API bridge,
+and records constraints. The existing AI Assistant is not yet wired to the new
+adapter. Ollama, YOLO and model weights are not bundled; the branch has not yet
+been validated on a real offline device.
