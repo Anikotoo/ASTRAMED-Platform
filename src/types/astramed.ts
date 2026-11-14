@@ -187,10 +187,17 @@ export interface AIChatMessage {
     params?: Record<string, string>;
   };
   citations?: Array<{
+    id?: string;
     title: string;
     source: string;
     doi?: string;
     url?: string;
   }>;
   isLiveGemini?: boolean;
+  isLiveAI?: boolean;
+  provider?: 'openrouter' | 'gemini' | 'offline';
+  model?: string;
+  evidenceType?: string;
+  note?: string;
+  sourceDisclosure?: string;
 }
