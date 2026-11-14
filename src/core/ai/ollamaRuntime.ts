@@ -60,10 +60,11 @@ export class OllamaRuntime implements AIModelRuntime {
 
   async loadModel(modelId: string): Promise<void> {
     if (!modelId.trim()) throw new Error('Select a model first.');
-    await this.request('/api/local-ai/pull', {
-      method: 'POST',
-      body: JSON.stringify({ model: modelId })
-    });
+    const models = await this.listModels();
+    if (!models.some(model => model.id === modelId)) {
+      throw new Error('This model is not installed locally. Provision the model before disconnecting from the internet.');
+    }
+    // Ollama loads the already-installed model on the first chat request.
     this.activeModelId = modelId;
   }
 
