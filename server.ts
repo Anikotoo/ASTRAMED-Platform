@@ -1158,7 +1158,13 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
       try {
         const response = await ai.models.generateContent({
           model: GEMINI_MODEL,
-          contents: String(message),
+          contents: [
+            ...history.map(item => ({
+              role: item.role,
+              parts: [{ text: item.content }]
+            })),
+            { role: 'user', parts: [{ text: String(message) }] }
+          ],
           config: {
             systemInstruction,
             temperature: 0.2
