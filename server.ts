@@ -222,6 +222,14 @@ function formatReading(reading: HealthReading): string {
   ].join(' | ');
 }
 
+function sanitizeConversationHistory(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item: any) => item && (item.role === 'user' || item.role === 'assistant') && typeof item.content === 'string' && item.content.trim())
+    .slice(-12)
+    .map((item: any) => ({ role: item.role as 'user' | 'assistant', content: safeText(item.content, item.role === 'assistant' ? 3500 : 1800) }));
+}
+
 function requestedCount(message: string, fallback = 5): number {
   const match = normalize(message).match(
     /(?:latest|last|show|display)\s+(\d{1,2})/
@@ -251,7 +259,12 @@ function getStudyContext(study: any) {
     year: safeText(study.year, 30),
     doi: safeText(study.doi, 300),
     url: safeText(study.url || study.link, 1000),
-    category: safeText(study.category, 200)
+    category: safeText(study.category, 200),
+    id: safeText(study.id, 200),
+    source: safeText(study.source, 200),
+    studyType: safeText(study.studyType, 200),
+    pmid: safeText(study.pmid, 100),
+    osdrId: safeText(study.osdrId, 100)
   };
 }
 
@@ -946,13 +959,15 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
       activeSection,
       activeCrewId,
       activeParam,
-      selectedStudy
+      selectedStudy,
+      conversationHistory
     } = req.body as {
       message: string;
       activeSection?: string;
       activeCrewId?: string;
       activeParam?: string;
       selectedStudy?: any;
+      conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
     };
 
     if (!message || !String(message).trim()) {
@@ -982,6 +997,13 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
     );
 
     const study = getStudyContext(selectedStudy);
+    const history = sanitizeConversationHistory(conversationHistory);
+    const crewDatasets = db.importedDatasets.filter(dataset => !crewMember || dataset.crewIdsAffected?.includes(crewMember.id));
+    const crewEvents = newestFirst(db.events.filter(event => !crewMember || event.crewId === crewMember.id)).slice(0, 12);
+    const sourceRegister: Array<{ id: string; title: string; source: string; doi?: string; url?: string }> = [];
+    if (readings.length > 0 || crewMember?.baseline) sourceRegister.push({ id: 'D1', title: 'ASTRAMED mission records — ' + (crewMember?.name || 'crew'), source: 'ASTRAMED persistent mission database; stored telemetry and configured crew baseline' });
+    if (crewAlerts.length > 0) sourceRegister.push({ id: 'D2', title: 'ASTRAMED alert evaluation', source: 'Rule-based alert engine using stored readings and mission thresholds' });
+    if (study) sourceRegister.push({ id: 'R1', title: study.title || 'Selected Research Library record', source: (study.source || 'Research Library') + ' record supplied by ASTRAMED; metadata not independently verified by this chat request', doi: study.doi || undefined, url: study.url || undefined });
 
     // Shared mission context and safety instructions for both live providers.
     const systemInstruction = [
@@ -998,30 +1020,33 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
       '8. Use the selected crew member and selected research study when provided.',
       '9. Do not confuse measurements from different crew members.',
       '10. Keep answers concise, structured and transparent.',
+      '11. Use recent conversation history to resolve follow-ups, but never treat prior assistant text as new telemetry.',
+      '12. Ask one clarification if the crew member or measurement is ambiguous.',
+      '13. Separate measured readings, crew baseline, derived summaries, alert-engine outputs and general scientific knowledge.',
+      '14. Never claim a trend from one measurement; state record count and time span used.',
+      '15. Cite only IDs in SOURCE REGISTER using [D1], [D2] or [R1]. Never invent papers, DOI values, authors, URLs or citations.',
+      '16. A Research Library record is not proof that the full paper was reviewed. Distinguish abstract/metadata from the full publication.',
+      '17. Without a supplied research source, label scientific claims as general background and do not attach a fabricated citation.',
+      '18. Do not diagnose or prescribe; clinical decisions require qualified Flight Surgeon review.',
       '',
       'NAVIGATION:',
       'If navigation is requested, append exactly one action tag in this format: <<<ACTION:{"type":"navigate","targetSection":"trends","params":{}}>>>.',
       'Only use these supported targets: overview, crew_body, trends, ai_assistant, research, enter_readings.',
       '',
+      'SOURCE REGISTER (cite only these IDs):',
+      JSON.stringify(sourceRegister),
+      '',
       'MISSION CONTEXT:',
       JSON.stringify({
         activeSection: activeSection || 'overview',
-        activeCrew: crewMember
-          ? {
-              id: crewMember.id,
-              name: crewMember.name,
-              callsign: crewMember.callsign,
-              role: crewMember.role
-            }
-          : null,
+        missionSettings: db.settings,
+        activeCrew: crewMember ? { id: crewMember.id, name: crewMember.name, callsign: crewMember.callsign, role: crewMember.role, mission: crewMember.mission, daysInOrbit: crewMember.daysInOrbit, baseline: crewMember.baseline } : null,
         selectedParameter: activeParam || null,
-        readings: readings.slice(0, 30).map(formatReading),
-        alerts: crewAlerts.map((alert: any) => ({
-          title: alert.title,
-          severity: alert.severity,
-          explanation: alert.explanation,
-          category: alert.category
-        })),
+        storedReadingCount: readings.length,
+        readings: readings.slice(0, 60).map(formatReading),
+        importedDatasets: crewDatasets,
+        alerts: crewAlerts.map((alert: any) => ({ title: alert.title, severity: alert.severity, parameter: alert.parameter, currentValue: alert.currentValue, thresholdValue: alert.thresholdValue, unit: alert.unit, explanation: alert.explanation, recommendedAction: alert.recommendedAction, timestamp: alert.timestamp, source: alert.source })),
+        recentEvents: crewEvents,
         selectedStudy: study
       })
     ].join('\n');
@@ -1074,6 +1099,7 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
             model: OPENROUTER_MODEL,
             messages: [
               { role: 'system', content: systemInstruction },
+              ...history,
               { role: 'user', content: String(message) }
             ],
             temperature: 0.2,
@@ -1113,6 +1139,8 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
           timestamp: new Date().toISOString(),
           suggestedAction: parsed.suggestedAction,
           evidenceType: 'openrouter_response',
+          citations: sourceRegister,
+          sourceDisclosure: 'These are the evidence records supplied to the model; their presence does not mean every source was independently verified.',
           isLiveGemini: false,
           isLiveAI: true,
           provider: 'openrouter',
@@ -1152,6 +1180,8 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
           timestamp: new Date().toISOString(),
           suggestedAction: parsed.suggestedAction,
           evidenceType: 'gemini_response',
+          citations: sourceRegister,
+          sourceDisclosure: 'These are the evidence records supplied to the model; their presence does not mean every source was independently verified.',
           isLiveGemini: true,
           isLiveAI: true,
           provider: 'gemini',
@@ -1180,6 +1210,8 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
       suggestedAction: offlineResult.suggestedAction,
       evidenceType: offlineResult.evidenceType,
+      citations: sourceRegister,
+      sourceDisclosure: 'Offline responses use deterministic ASTRAMED rules and stored mission records; they are not live research searches.',
       isLiveGemini: false,
       isLiveAI: false,
       provider: 'offline',
