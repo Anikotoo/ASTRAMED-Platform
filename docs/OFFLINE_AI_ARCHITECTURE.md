@@ -23,7 +23,7 @@ contract for model discovery, status, loading and chat generation.
 - Desktop: a locally managed inference service may be used. The first adapter
   now uses a loopback-only Express bridge to Ollama (`127.0.0.1:11434`). The
   browser talks only to ASTRAMED's same-origin API, not directly to Ollama.
-  This adapter is a development bridge, not yet a self-contained desktop package.
+  This adapter is a development bridge, not yet a self-contained desktop package. It deliberately has no model-download route; models must be provisioned before going offline.
 - Android: use a mobile-compatible inference backend. The desktop Ollama
   service is not the Android embedding strategy.
 - Model weights must be present on the device before offline operation.
@@ -73,7 +73,7 @@ fit or run at an acceptable speed. Model selection needs real-device tests.
 ## Implementation sequence
 
 1. Add platform-neutral AI and pose runtime contracts. (Current foundation.)
-2. Add a desktop local-model adapter and controlled model provisioning flow. (Initial Ollama bridge added; UI selection and local validation remain.)
+2. Add a desktop local-model adapter and controlled selection of preinstalled local models. (Initial Ollama bridge added; UI selection and local validation remain.)
 3. Add an Android-native inference adapter and compatible quantized model.
 4. Add the pose model adapter for desktop and Android.
 5. Replace the AI Assistant's direct server call with an injected runtime.
