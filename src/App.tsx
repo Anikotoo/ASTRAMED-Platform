@@ -5,7 +5,8 @@ import {
   HealthAlert, 
   HealthEvent, 
   ImportedDataset, 
-  MissionSettings 
+  MissionSettings,
+  ResearchStudy
 } from './types/astramed';
 import { DEFAULT_MISSION_SETTINGS } from './utils/alertEngine';
 import { TopStatusBar } from './components/TopStatusBar';
@@ -44,6 +45,7 @@ export default function App() {
 
   // Cross-component prompt passing (e.g. from Research Library to AI Assistant)
   const [aiInitialPrompt, setAiInitialPrompt] = useState<string | undefined>(undefined);
+  const [aiSelectedStudy, setAiSelectedStudy] = useState<ResearchStudy | null>(null);
   const [researchCategoryFilter, setResearchCategoryFilter] = useState<string | undefined>(undefined);
 
   // Fetch all mission data
@@ -196,7 +198,8 @@ export default function App() {
   };
 
   // Navigate to AI Assistant with initial prompt
-  const handleAskAIFromStudy = (prompt: string) => {
+  const handleAskAIFromStudy = (prompt: string, study?: ResearchStudy) => {
+    setAiSelectedStudy(study || null);
     setAiInitialPrompt(prompt);
     setActiveSection('ai_assistant');
   };
@@ -283,6 +286,7 @@ export default function App() {
                   isGeminiActive={isGeminiActive}
                   onExecuteAction={handleExecuteAction}
                   initialPrompt={aiInitialPrompt}
+                  selectedStudy={aiSelectedStudy}
                 />
               )}
 
