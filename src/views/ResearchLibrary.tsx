@@ -79,7 +79,7 @@ export const ResearchLibrary: React.FC<ResearchLibraryProps> = ({
           <div>
             <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
               <Database className="w-3.5 h-3.5 text-cyan-400" />
-              <span>SCIENTIFIC EVIDENCE ENGINE • NASA OSDR &amp; EUROPE PMC</span>
+              <span>LIVE EUROPE PMC SEARCH • NASA OSDR RECORDS NOT YET VERIFIED</span>
             </div>
             <h1 className="text-xl font-bold text-white tracking-wide mt-1">
               Spaceflight Biomedical Research Library
@@ -160,7 +160,7 @@ export const ResearchLibrary: React.FC<ResearchLibraryProps> = ({
                     {study.source}
                   </span>
                   <span className="text-slate-400">
-                    {study.studyType} • {study.year}
+                    {study.studyType} • {study.year || 'Year unavailable'}
                   </span>
                 </div>
 
@@ -171,7 +171,7 @@ export const ResearchLibrary: React.FC<ResearchLibraryProps> = ({
 
                 {/* Authors & Journal */}
                 <div className="text-[11px] text-slate-400 font-mono mt-1">
-                  {study.authors.slice(0, 3).join(', ')}{study.authors.length > 3 ? ' et al.' : ''}
+                  {study.authors.length ? `${study.authors.slice(0, 3).join(', ')}${study.authors.length > 3 ? ' et al.' : ''}` : 'Authors unavailable'}
                   <span className="text-slate-500"> • {study.journal}</span>
                 </div>
 
@@ -237,7 +237,7 @@ export const ResearchLibrary: React.FC<ResearchLibraryProps> = ({
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 grid grid-cols-2 gap-2 font-mono">
                 <div>
                   <span className="text-[10px] text-slate-400 block">JOURNAL &amp; YEAR</span>
-                  <span className="font-semibold text-slate-200">{activeStudy.journal} ({activeStudy.year})</span>
+                  <span className="font-semibold text-slate-200">{activeStudy.journal} ({activeStudy.year || 'Year unavailable'})</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 block">STUDY DESIGN</span>
@@ -245,11 +245,11 @@ export const ResearchLibrary: React.FC<ResearchLibraryProps> = ({
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 block">AUTHORS</span>
-                  <span className="text-slate-300">{activeStudy.authors.join(', ')}</span>
+                  <span className="text-slate-300">{activeStudy.authors.length ? activeStudy.authors.join(', ') : 'Authors unavailable'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 block">IDENTIFIER</span>
-                  <span className="text-slate-300">{activeStudy.doi ? `DOI: ${activeStudy.doi}` : (activeStudy.pmid ? `PMID: ${activeStudy.pmid}` : 'OSDR')}</span>
+                  <span className="text-slate-300">{activeStudy.doi ? `DOI: ${activeStudy.doi}` : (activeStudy.pmid ? `PMID: ${activeStudy.pmid}` : 'No DOI or PMID supplied')}</span>
                 </div>
               </div>
 
