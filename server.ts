@@ -268,6 +268,15 @@ function getAlerts(db: AstramedDatabase) {
 // GEMINI CONFIGURATION â€” OPTIONAL
 // ============================================================
 
+const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || '').trim();
+const hasOpenRouterKey = Boolean(
+  OPENROUTER_API_KEY &&
+  !['your_actual_key_here', 'YOUR_OPENROUTER_API_KEY', 'MY_OPENROUTER_API_KEY'].includes(OPENROUTER_API_KEY)
+);
+
+const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL || 'openrouter/free';
+
 const hasGeminiKey = Boolean(
   process.env.GEMINI_API_KEY &&
   process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'
@@ -291,9 +300,19 @@ const GEMINI_MODEL =
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
-    version: '2.0.0',
+    version: '2.1.0',
+    openrouterConfigured: hasOpenRouterKey,
     geminiConfigured: hasGeminiKey,
-    model: hasGeminiKey ? GEMINI_MODEL : 'offline-space-medicine-engine',
+    activeProvider: hasOpenRouterKey
+      ? 'openrouter'
+      : hasGeminiKey
+        ? 'gemini'
+        : 'offline',
+    model: hasOpenRouterKey
+      ? OPENROUTER_MODEL
+      : hasGeminiKey
+        ? GEMINI_MODEL
+        : 'offline-space-medicine-engine',
     storage: 'persistent-fs-json'
   });
 });
@@ -964,60 +983,151 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
 
     const study = getStudyContext(selectedStudy);
 
-    // Structured evidence sent to Gemini when it is configured.
+    // Shared mission context and safety instructions for both live providers.
+    const systemInstruction = [
+      'You are ASTRAMED, an astronaut health-monitoring decision-support prototype.',
+      '',
+      'You must follow these rules:',
+      '1. Never invent health readings, timestamps, alerts, research findings, authors, publication years, DOI values or citations.',
+      '2. Use only the supplied database context for claims about this mission.',
+      '3. Clearly distinguish telemetry observations, alert evaluations, research abstract findings and general scientific explanations.',
+      '4. If requested data is missing, say it is missing.',
+      '5. Do not diagnose or prescribe treatment.',
+      '6. Do not claim that a research abstract proves clinical effectiveness.',
+      '7. Do not treat an alert as a confirmed medical diagnosis.',
+      '8. Use the selected crew member and selected research study when provided.',
+      '9. Do not confuse measurements from different crew members.',
+      '10. Keep answers concise, structured and transparent.',
+      '',
+      'NAVIGATION:',
+      'If navigation is requested, append exactly one action tag in this format: <<<ACTION:{"type":"navigate","targetSection":"trends","params":{}}>>>.',
+      'Only use these supported targets: overview, crew_body, trends, ai_assistant, research, enter_readings.',
+      '',
+      'MISSION CONTEXT:',
+      JSON.stringify({
+        activeSection: activeSection || 'overview',
+        activeCrew: crewMember
+          ? {
+              id: crewMember.id,
+              name: crewMember.name,
+              callsign: crewMember.callsign,
+              role: crewMember.role
+            }
+          : null,
+        selectedParameter: activeParam || null,
+        readings: readings.slice(0, 30).map(formatReading),
+        alerts: crewAlerts.map((alert: any) => ({
+          title: alert.title,
+          severity: alert.severity,
+          explanation: alert.explanation,
+          category: alert.category
+        })),
+        selectedStudy: study
+      })
+    ].join('\n');
+
+    const parseAssistantAction = (responseText: string) => {
+      let cleanText = responseText;
+      let suggestedAction: any = undefined;
+      const actionMatch = responseText.match(/<<<ACTION:(.*?)>>>/s);
+
+      if (actionMatch) {
+        try {
+          const parsedAction = JSON.parse(actionMatch[1]);
+          const allowedTargets = [
+            'overview',
+            'crew_body',
+            'trends',
+            'ai_assistant',
+            'research',
+            'enter_readings'
+          ];
+
+          if (allowedTargets.includes(parsedAction.targetSection)) {
+            suggestedAction = {
+              ...parsedAction,
+              label: parsedAction.label || 'Open ' + parsedAction.targetSection
+            };
+          }
+
+          cleanText = responseText.replace(actionMatch[0], '').trim();
+        } catch {
+          console.warn('Invalid AI action tag ignored.');
+        }
+      }
+
+      return { cleanText, suggestedAction };
+    };
+
+    // Primary provider: OpenRouter.
+    if (hasOpenRouterKey) {
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + OPENROUTER_API_KEY,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': process.env.APP_URL || 'https://astramed-platform.onrender.com',
+            'X-Title': 'ASTRAMED'
+          },
+          body: JSON.stringify({
+            model: OPENROUTER_MODEL,
+            messages: [
+              { role: 'system', content: systemInstruction },
+              { role: 'user', content: String(message) }
+            ],
+            temperature: 0.2,
+            max_tokens: 1200
+          }),
+          signal: AbortSignal.timeout(45000)
+        });
+
+        const payload: any = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            payload?.error?.message ||
+            'OpenRouter request failed with HTTP ' + response.status
+          );
+        }
+
+        const rawContent = payload?.choices?.[0]?.message?.content;
+        const responseText = typeof rawContent === 'string'
+          ? rawContent
+          : Array.isArray(rawContent)
+            ? rawContent.map((part: any) =>
+                typeof part === 'string' ? part : part?.text || ''
+              ).join('')
+            : '';
+
+        if (!responseText.trim()) {
+          throw new Error('OpenRouter returned an empty response.');
+        }
+
+        const parsed = parseAssistantAction(responseText);
+
+        res.json({
+          id: 'ai_' + Date.now(),
+          sender: 'assistant',
+          text: parsed.cleanText,
+          timestamp: new Date().toISOString(),
+          suggestedAction: parsed.suggestedAction,
+          evidenceType: 'openrouter_response',
+          isLiveGemini: false,
+          isLiveAI: true,
+          provider: 'openrouter',
+          model: payload?.model || OPENROUTER_MODEL
+        });
+
+        return;
+      } catch (error) {
+        console.error('OpenRouter request failed; trying Gemini fallback:', error);
+      }
+    }
+
+    // Secondary provider: Gemini.
     if (ai) {
       try {
-        const systemInstruction = `
-You are ASTRAMED, an astronaut health-monitoring decision-support prototype.
-
-You must follow these rules:
-
-1. Never invent health readings, timestamps, alerts, research findings,
-   authors, publication years, DOI values or citations.
-2. Use only the supplied database context for claims about this mission.
-3. Clearly distinguish:
-   - TELEMETRY OBSERVATION: actual stored measurement.
-   - ALERT EVALUATION: output returned by the application's alert engine.
-   - RESEARCH ABSTRACT FINDING: information explicitly present in the supplied abstract.
-   - GENERAL SCIENTIFIC EXPLANATION: general background knowledge.
-4. If requested data is missing, say it is missing.
-5. Do not diagnose or prescribe treatment.
-6. Do not claim that a research abstract proves clinical effectiveness.
-7. Do not treat an alert as a confirmed medical diagnosis.
-8. Use the selected crew member and selected research study when provided.
-9. Do not confuse measurements from different crew members.
-10. Keep answers concise, structured and transparent.
-
-NAVIGATION:
-If navigation is requested, append exactly one action tag:
-<<<ACTION:{"type":"navigate","targetSection":"trends","params":{}}>>>
-
-Only use supported targets:
-overview, crew_body, trends, ai_assistant, research, enter_readings.
-
-MISSION CONTEXT:
-${JSON.stringify({
-  activeSection: activeSection || 'overview',
-  activeCrew: crewMember
-    ? {
-        id: crewMember.id,
-        name: crewMember.name,
-        callsign: crewMember.callsign,
-        role: crewMember.role
-      }
-    : null,
-  selectedParameter: activeParam || null,
-  readings: readings.slice(0, 30).map(formatReading),
-  alerts: crewAlerts.map((alert: any) => ({
-    title: alert.title,
-    severity: alert.severity,
-    explanation: alert.explanation,
-    category: alert.category
-  })),
-  selectedStudy: study
-})}
-`;
-
         const response = await ai.models.generateContent({
           model: GEMINI_MODEL,
           contents: String(message),
@@ -1027,63 +1137,30 @@ ${JSON.stringify({
           } as any
         });
 
-        const responseText =
-          response.text ||
-          'The AI service returned an empty response.';
+        const responseText = response.text || '';
 
-        let cleanText = responseText;
-        let suggestedAction: any = undefined;
-
-        const actionMatch = responseText.match(
-          /<<<ACTION:(.*?)>>>/s
-        );
-
-        if (actionMatch) {
-          try {
-            const parsedAction = JSON.parse(actionMatch[1]);
-
-            const allowedTargets = [
-              'overview',
-              'crew_body',
-              'trends',
-              'ai_assistant',
-              'research',
-              'enter_readings'
-            ];
-
-            if (allowedTargets.includes(parsedAction.targetSection)) {
-              suggestedAction = {
-                ...parsedAction,
-                label:
-                  parsedAction.label ||
-                  `Open ${parsedAction.targetSection}`
-              };
-            }
-
-            cleanText = responseText
-              .replace(actionMatch[0], '')
-              .trim();
-          } catch {
-            console.warn('Invalid AI action tag ignored.');
-          }
+        if (!responseText.trim()) {
+          throw new Error('Gemini returned an empty response.');
         }
 
+        const parsed = parseAssistantAction(responseText);
+
         res.json({
-          id: `ai_${Date.now()}`,
+          id: 'ai_' + Date.now(),
           sender: 'assistant',
-          text: cleanText,
+          text: parsed.cleanText,
           timestamp: new Date().toISOString(),
-          suggestedAction,
+          suggestedAction: parsed.suggestedAction,
           evidenceType: 'gemini_response',
-          isLiveGemini: true
+          isLiveGemini: true,
+          isLiveAI: true,
+          provider: 'gemini',
+          model: GEMINI_MODEL
         });
 
         return;
       } catch (error) {
-        console.error(
-          'Gemini request failed; using offline engine:',
-          error
-        );
+        console.error('Gemini request failed; using offline engine:', error);
       }
     }
 
@@ -1104,9 +1181,14 @@ ${JSON.stringify({
       suggestedAction: offlineResult.suggestedAction,
       evidenceType: offlineResult.evidenceType,
       isLiveGemini: false,
-      note: hasGeminiKey
-        ? 'Gemini was unavailable for this request. Offline engine used.'
-        : 'Running in offline Space Medicine Engine mode. No Gemini API key is configured.'
+      isLiveAI: false,
+      provider: 'offline',
+      model: 'offline-space-medicine-engine',
+      note: hasOpenRouterKey
+        ? 'OpenRouter was unavailable and Gemini fallback did not return a response. Offline engine used.'
+        : hasGeminiKey
+          ? 'Gemini was unavailable for this request. Offline engine used.'
+          : 'No AI API key is configured. Running in offline Space Medicine Engine mode.'
     });
 
   } catch (error) {
