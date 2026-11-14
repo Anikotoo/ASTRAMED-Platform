@@ -1160,7 +1160,7 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
           model: GEMINI_MODEL,
           contents: [
             ...history.map(item => ({
-              role: item.role,
+              role: item.role === 'assistant' ? 'model' : 'user',
               parts: [{ text: item.content }]
             })),
             { role: 'user', parts: [{ text: String(message) }] }
