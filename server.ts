@@ -917,6 +917,150 @@ function buildOfflineAnswer(
 }
 
 // ============================================================
+// LOCAL OLLAMA RUNTIME BRIDGE
+// ============================================================
+
+const OLLAMA_BASE_URL = (() => {
+  const configured = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+  try {
+    const url = new URL(configured);
+    const allowedHosts = new Set(['127.0.0.1', 'localhost', '[::1]']);
+    if (url.protocol !== 'http:' || !allowedHosts.has(url.hostname)) {
+      console.warn('OLLAMA_HOST must be a loopback HTTP URL; using localhost.');
+      return 'http://127.0.0.1:11434';
+    }
+    return url.origin;
+  } catch {
+    return 'http://127.0.0.1:11434';
+  }
+})();
+
+async function ollamaFetch(endpoint: string, init?: RequestInit) {
+  return fetch(`${OLLAMA_BASE_URL}${endpoint}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init?.headers || {})
+    },
+    signal: init?.signal || AbortSignal.timeout(120_000)
+  });
+}
+
+app.get('/api/local-ai/status', async (_req: Request, res: Response) => {
+  try {
+    const response = await ollamaFetch('/api/tags', { signal: AbortSignal.timeout(3000) });
+    if (!response.ok) {
+      res.json({ provider: 'ollama', state: 'error', message: `Ollama returned HTTP ${response.status}` });
+      return;
+    }
+    const payload = await response.json() as { models?: Array<{ name: string }> };
+    const models = Array.isArray(payload.models) ? payload.models : [];
+    res.json({
+      provider: 'ollama',
+      state: models.length ? 'ready' : 'model-missing',
+      models: models.map(model => model.name),
+      message: models.length ? 'Local Ollama runtime is reachable.' : 'Ollama is running, but no models are installed.'
+    });
+  } catch {
+    res.json({
+      provider: 'ollama',
+      state: 'unavailable',
+      models: [],
+      message: 'Ollama is not reachable on this device. Start Ollama locally to use on-device AI.'
+    });
+  }
+});
+
+app.get('/api/local-ai/models', async (_req: Request, res: Response) => {
+  try {
+    const response = await ollamaFetch('/api/tags', { signal: AbortSignal.timeout(5000) });
+    if (!response.ok) {
+      res.status(502).json({ error: `Ollama returned HTTP ${response.status}` });
+      return;
+    }
+    const payload = await response.json() as { models?: Array<{ name: string; size?: number; details?: { family?: string; quantization_level?: string } }> };
+    res.json((payload.models || []).map(model => ({
+      id: model.name,
+      displayName: model.name,
+      family: model.details?.family || 'unknown',
+      quantization: model.details?.quantization_level,
+      sizeBytes: model.size,
+      isDownloaded: true,
+      supportedPlatforms: ['desktop']
+    })));
+  } catch {
+    res.status(503).json({ error: 'Local Ollama runtime is unavailable.' });
+  }
+});
+
+app.post('/api/local-ai/pull', async (req: Request, res: Response) => {
+  const model = String(req.body?.model || '').trim();
+  if (!model || model.length > 160 || /[\r\n]/.test(model)) {
+    res.status(400).json({ error: 'A valid model name is required.' });
+    return;
+  }
+  try {
+    const response = await ollamaFetch('/api/pull', {
+      method: 'POST',
+      body: JSON.stringify({ name: model, stream: false }),
+      signal: AbortSignal.timeout(30 * 60 * 1000)
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      res.status(502).json({ error: payload.error || `Ollama returned HTTP ${response.status}` });
+      return;
+    }
+    res.json({ success: true, model, result: payload });
+  } catch {
+    res.status(503).json({ error: 'Could not download the model from the local Ollama runtime.' });
+  }
+});
+
+app.post('/api/local-ai/chat', async (req: Request, res: Response) => {
+  const model = String(req.body?.model || '').trim();
+  const messages = req.body?.messages;
+  if (!model || !Array.isArray(messages) || messages.length === 0 || messages.length > 40) {
+    res.status(400).json({ error: 'A model and between 1 and 40 chat messages are required.' });
+    return;
+  }
+  const safeMessages = messages.filter((item: any) =>
+    item && ['system', 'user', 'assistant'].includes(item.role) &&
+    typeof item.content === 'string' && item.content.length <= 12000
+  );
+  if (safeMessages.length !== messages.length) {
+    res.status(400).json({ error: 'Chat messages contain an invalid role or content.' });
+    return;
+  }
+  try {
+    const response = await ollamaFetch('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        model,
+        messages: safeMessages,
+        stream: false,
+        options: {
+          temperature: Math.min(1, Math.max(0, Number(req.body?.temperature ?? 0.2)))
+        }
+      }),
+      signal: AbortSignal.timeout(180_000)
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      res.status(502).json({ error: payload.error || `Ollama returned HTTP ${response.status}` });
+      return;
+    }
+    res.json({
+      text: payload.message?.content || '',
+      modelId: model,
+      provider: 'ollama',
+      durationMs: typeof payload.total_duration === 'number' ? Math.round(payload.total_duration / 1e6) : undefined
+    });
+  } catch {
+    res.status(503).json({ error: 'Local AI request failed. Check that Ollama and the selected model are available.' });
+  }
+});
+
+// ============================================================
 // AI ASSISTANT CHAT
 // ============================================================
 
