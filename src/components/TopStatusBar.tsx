@@ -1,13 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { CrewMember, HealthAlert } from '../types/astramed';
-import { 
-  Clock, 
-  Users, 
-  AlertTriangle, 
-  Radio, 
-  Sparkles, 
-  FileText, 
-  Scale, 
+import {
+  Clock,
+  Users,
+  AlertTriangle,
+  Radio,
+  FileText,
+  Scale,
   Globe2,
   CheckCircle2,
   ChevronDown,
@@ -142,19 +142,6 @@ export const TopStatusBar: React.FC<TopStatusBarProps> = ({
           <span className="font-semibold">{alerts.length}</span>
           <span className="hidden sm:inline">ALERTS</span>
         </button>
-
-        {/* AI Status Pill */}
-        <div 
-          className={`hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] ${
-            isGeminiActive 
-              ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300' 
-              : 'bg-slate-900 border-slate-800 text-slate-400'
-          }`}
-          title={isGeminiActive ? 'Gemini 3.8 Flash live biomedical decision support connected' : 'Offline space medicine decision support active'}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          <span>{isGeminiActive ? 'GEMINI 3.8' : 'OFFLINE AI'}</span>
-        </div>
 
         {/* Active Crew Member Selector */}
         <div className="relative">
