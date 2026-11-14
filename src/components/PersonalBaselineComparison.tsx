@@ -19,7 +19,6 @@ const getProfileReference = (
   parameter: HealthParameter
 ): ProfileReference | null => {
   switch (parameter) {
-    case 'heart_rate':
     case 'resting_heart_rate':
       return { value: crew.baseline.restingHeartRate, unit: 'bpm', label: 'Profile resting reference' };
     case 'blood_pressure_sys':
@@ -86,6 +85,15 @@ export const PersonalBaselineComparison: React.FC<PersonalBaselineComparisonProp
 
   if (!crew) return null;
 
+  const ready = comparison?.kind === 'ready' ? comparison : null;
+  const delta = ready ? Number((ready.latest.value - ready.baseline).toFixed(2)) : 0;
+  const percent = ready && ready.baseline !== 0
+    ? Number(((delta / Math.abs(ready.baseline)) * 100).toFixed(1))
+    : null;
+  const direction = delta > 0 ? 'above' : delta < 0 ? 'below' : 'matches';
+  const DeltaIcon = delta > 0 ? ArrowUpRight : delta < 0 ? ArrowDownRight : Minus;
+  const deltaColor = delta === 0 ? 'text-slate-200' : 'text-cyan-300';
+
   const formatDate = (timestamp: string) =>
     new Date(timestamp).toLocaleString(undefined, {
       day: '2-digit',
@@ -142,54 +150,33 @@ export const PersonalBaselineComparison: React.FC<PersonalBaselineComparisonProp
         </div>
       )}
 
-      {comparison?.kind === 'ready' && (() => {
-        const delta = Number((comparison.latest.value - comparison.baseline).toFixed(2));
-        const percent = comparison.baseline !== 0
-          ? Number(((delta / Math.abs(comparison.baseline)) * 100).toFixed(1))
-          : null;
-        const direction = delta > 0 ? 'above' : delta < 0 ? 'below' : 'matches';
-        const DeltaIcon = delta > 0 ? ArrowUpRight : delta < 0 ? ArrowDownRight : Minus;
-        const deltaColor = delta === 0 ? 'text-slate-200' : 'text-cyan-300';
-
-        return (
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-slate-950/70 border border-slate-800 rounded-lg p-3">
-                <div className="text-[10px] text-slate-500 font-mono uppercase">Personal baseline</div>
-                <div className="text-xl font-bold text-white mt-1 tabular-nums">
-                  {comparison.baseline} <span className="text-xs text-slate-400">{comparison.latest.unit}</span>
-                </div>
-                <div className="text-[10px] text-slate-500 mt-1">{comparison.baselineLabel}</div>
-              </div>
-              <div className="bg-slate-950/70 border border-slate-800 rounded-lg p-3">
-                <div className="text-[10px] text-slate-500 font-mono uppercase">Latest reading</div>
-                <div className="text-xl font-bold text-white mt-1 tabular-nums">
-                  {comparison.latest.value} <span className="text-xs text-slate-400">{comparison.latest.unit}</span>
-                </div>
-                <div className="text-[10px] text-slate-500 mt-1">{formatDate(comparison.latest.timestamp)}</div>
-              </div>
-              <div className="bg-slate-950/70 border border-cyan-900/50 rounded-lg p-3">
-                <div className="text-[10px] text-slate-500 font-mono uppercase">Difference from baseline</div>
-                <div className={`text-xl font-bold mt-1 tabular-nums flex items-center gap-1 ${deltaColor}`}>
-                  <DeltaIcon className="w-4 h-4" />
-                  {delta > 0 ? '+' : ''}{delta} <span className="text-xs text-slate-400">{comparison.latest.unit}</span>
-                </div>
-                <div className="text-[10px] text-slate-400 mt-1">
-                  {direction} reference{percent === null ? '' : ` · ${percent > 0 ? '+' : ''}${percent}%`}
-                </div>
-              </div>
+      {ready && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-slate-950/70 border border-slate-800 rounded-lg p-3">
+              <div className="text-[10px] text-slate-500 font-mono uppercase">Personal baseline</div>
+              <div className="text-xl font-bold text-white mt-1 tabular-nums">{ready.baseline} <span className="text-xs text-slate-400">{ready.latest.unit}</span></div>
+              <div className="text-[10px] text-slate-500 mt-1">{ready.baselineLabel}</div>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500">
-              <span>
-                {comparison.sampleCount === null
-                  ? 'Reference comes from the crew profile.'
-                  : `Calculated from ${comparison.sampleCount} earlier readings; latest reading excluded.`}
-              </span>
-              <span>Uses all available history, independent of chart time filter.</span>
+            <div className="bg-slate-950/70 border border-slate-800 rounded-lg p-3">
+              <div className="text-[10px] text-slate-500 font-mono uppercase">Latest reading</div>
+              <div className="text-xl font-bold text-white mt-1 tabular-nums">{ready.latest.value} <span className="text-xs text-slate-400">{ready.latest.unit}</span></div>
+              <div className="text-[10px] text-slate-500 mt-1">{formatDate(ready.latest.timestamp)}</div>
+            </div>
+            <div className="bg-slate-950/70 border border-cyan-900/50 rounded-lg p-3">
+              <div className="text-[10px] text-slate-500 font-mono uppercase">Difference from baseline</div>
+              <div className={`text-xl font-bold mt-1 tabular-nums flex items-center gap-1 ${deltaColor}`}>
+                <DeltaIcon className="w-4 h-4" />{delta > 0 ? '+' : ''}{delta} <span className="text-xs text-slate-400">{ready.latest.unit}</span>
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1">{direction} reference{percent === null ? '' : ` · ${percent > 0 ? '+' : ''}${percent}%`}</div>
             </div>
           </div>
-        );
-      })()}
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500">
+            <span>{ready.sampleCount === null ? 'Reference comes from the crew profile.' : `Calculated from ${ready.sampleCount} earlier readings; latest reading excluded.`}</span>
+            <span>Uses all available history, independent of chart time filter.</span>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-start gap-2 border-t border-slate-800 pt-3 text-[10px] text-slate-500">
         <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5 text-slate-500" />
