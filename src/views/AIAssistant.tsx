@@ -61,8 +61,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         `• Heart rate\n• Blood pressure\n• Oxygen\n• Temperature\n` +
         `• Muscle health\n• Bone health\n• Radiation\n• Microgravity\n` +
         `• Health alerts\n• Crew profiles\n\n` +
-        `I only answer questions within these supported categories. ` +
-        `I do not generate medical diagnoses or invent health readings.\n\n` +
+        `I can analyse stored crew readings, baselines, alerts, mission events and supplied research records. I can also answer follow-up questions using this chat's recent context.\n\n` +
+        `I distinguish measured data from alert-engine outputs and general scientific background. I do not invent readings, citations or diagnoses.\n\n` +
         `Current crew: **${selectedCrew?.name || 'No crew selected'}**\n` +
         `Registered alerts: **${alerts.length}**\n\n` +
         `How can I assist your mission analysis?`,
@@ -478,7 +478,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           type="text"
           value={inputPrompt}
           onChange={event => setInputPrompt(event.target.value)}
-          placeholder="Ask about supported astronaut health topics..."
+          placeholder="Ask about crew health data, trends, mission context or research..."
           className="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-500"
         />
 
