@@ -18,7 +18,7 @@ import {
 
 interface ResearchLibraryProps {
   initialCategory?: string;
-  onAskAI?: (prompt: string) => void;
+  onAskAI?: (prompt: string, study?: ResearchStudy) => void;
 }
 
 export const ResearchLibrary: React.FC<ResearchLibraryProps> = ({
@@ -266,7 +266,7 @@ export const ResearchLibrary: React.FC<ResearchLibraryProps> = ({
                     onClick={() => {
                       const prompt = `Can you explain the clinical significance of "${activeStudy.title}" for astronaut countermeasure protocols?`;
                       setActiveStudy(null);
-                      onAskAI(prompt);
+                      onAskAI(prompt, activeStudy);
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-950 border border-cyan-800 hover:bg-cyan-900 text-cyan-300 font-mono text-xs cursor-pointer"
                   >
