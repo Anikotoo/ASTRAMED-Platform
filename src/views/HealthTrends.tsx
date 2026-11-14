@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CrewMember, HealthReading, HealthParameter } from '../types/astramed';
 import { calculateTrend } from '../utils/trendCalculator';
+import { PersonalBaselineComparison } from '../components/PersonalBaselineComparison';
 import { 
   LineChart as LineChartIcon, 
   Calendar, 
@@ -212,6 +213,8 @@ export const HealthTrends: React.FC<HealthTrendsProps> = ({
           </button>
         </div>
       </div>
+
+      <PersonalBaselineComparison crew={activeCrew || null} readings={readings} parameter={selectedParam} />
 
       {/* Main Interactive Chart Canvas Card */}
       <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-xl shadow-xl">
