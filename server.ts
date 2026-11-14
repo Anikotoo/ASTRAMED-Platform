@@ -1190,7 +1190,7 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
         res.json({
           id: 'ai_' + Date.now(),
           sender: 'assistant',
-          text: parsed.cleanText,
+          text: sanitizeSourceReferences(parsed.cleanText),
           timestamp: new Date().toISOString(),
           suggestedAction: parsed.suggestedAction,
           evidenceType: 'gemini_response',
