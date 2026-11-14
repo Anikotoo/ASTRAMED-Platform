@@ -350,7 +350,7 @@ const GEMINI_MODEL =
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
-    version: '2.1.0',
+    version: '2.2.0',
     openrouterConfigured: hasOpenRouterKey,
     geminiConfigured: hasGeminiKey,
     activeProvider: hasOpenRouterKey
