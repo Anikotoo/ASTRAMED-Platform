@@ -45,15 +45,15 @@ function normalizeFiles(payload: any): StudyFile[] {
     return {
       name: textOf(item.file_name, item.filename, item.name, item.label, item.remote_url) || 'NASA OSDR file',
       url,
-      type: textOf(item.file_type, item.data_type, item.type, item.category, item.file_category),
-      size: textOf(item.file_size, item.size),
+      type: textOf(item.category, item.file_type, item.data_type, item.type, item.file_category),
+      size: (() => { const bytes = Number(item.file_size ?? item.size); return Number.isFinite(bytes) && bytes > 0 ? (bytes >= 1073741824 ? `${(bytes / 1073741824).toFixed(1)} GB` : bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${(bytes / 1024).toFixed(1)} KB`) : textOf(item.file_size, item.size); })(),
       source: item
     };
   }).filter((file: StudyFile) => file.url || file.name);
 }
 
 export const OSDRExplorer: React.FC = () => {
-  const [term, setTerm] = useState('human astronaut physiology');
+  const [term, setTerm] = useState('human spaceflight physiology');
   const [studies, setStudies] = useState<Study[]>([]);
   const [selected, setSelected] = useState<Study | null>(null);
   const [files, setFiles] = useState<StudyFile[]>([]);
@@ -143,12 +143,12 @@ export const OSDRExplorer: React.FC = () => {
         {loadingFiles ? <div className="text-xs text-slate-400 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading file catalog…</div> : files.length > 0 ? files.map((file, index) => <div key={index} className="flex items-start justify-between gap-3 border-t border-slate-800 pt-2">
           <div className="min-w-0"><div className="text-xs text-slate-200 break-all">{file.name}</div><div className="text-[10px] text-slate-500 mt-1">{file.type}{file.size ? ` · ${file.size}` : ''}</div></div>
           {file.url && <a href={file.url} target="_blank" rel="noreferrer" className="shrink-0 text-cyan-300" title="Open original NASA file"><FileDown className="w-4 h-4" /></a>}
-        </div>) : !loadingFiles && <p className="text-xs text-slate-400">Use the NASA study page's Files panel to browse and download the original files.</p>}
+        </div>) : !loadingFiles && <p className="text-xs text-slate-400">Open the NASA study page's Files panel to inspect the full file catalog and download the original archive. Extract it locally if it is ZIP/TAR before reviewing any CSV.</p>}
       </div>}
 
       <div className="flex items-start gap-2 rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-[11px] text-slate-400">
         <Info className="w-4 h-4 shrink-0 text-cyan-400 mt-0.5" />
-        <p>Do not import arbitrary OSDR tables as vital signs. RNA-seq, sample metadata, animal studies and environmental records have different meanings and units. Only validated physiological rows should enter Health Trends; all other files remain research evidence with their NASA accession and citation.</p>
+        <p>OSDR files are not automatically imported as crew telemetry. Many are ZIP, TAR, FASTQ or gene-expression files—not vital-sign CSVs. Download the original file, inspect its documentation, and only use the existing CSV importer for a genuinely compatible table. Never map a research subject to a live crew member unless the study explicitly supports that identity.</p>
       </div>
       <a href="https://osdr.nasa.gov/bio/repo/search" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-cyan-300 hover:text-cyan-200">Open full NASA OSDR search portal <ExternalLink className="w-3 h-3" /></a>
     </section>
