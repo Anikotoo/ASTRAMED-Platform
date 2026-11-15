@@ -212,7 +212,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({
                       type="text"
                       value={datasetName}
                       onChange={e => setDatasetName(e.target.value)}
-                      placeholder="e.g. Expedition 75 Week 8 Biometrics"
+                      placeholder="e.g. Imported crew health dataset"
                       className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white outline-none mt-1"
                     />
                   </div>
