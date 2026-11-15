@@ -228,22 +228,8 @@ export const EnterReadings: React.FC<EnterReadingsProps> = ({
             />
           </div>
 
-          {/* Data Source */}
-          <div>
-            <label className="text-[11px] font-mono uppercase text-slate-300 block mb-1">
-              Acquisition Source *
-            </label>
-            <select
-              value={source}
-              onChange={e => setSource(e.target.value as DataSource)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
-            >
-              <option value="manual_entry">Manual Crew Entry</option>
-              <option value="clinical_exam">Clinical Medical Examination</option>
-              <option value="biomed_telemetry">Bio-Monitor Continuous Telemetry</option>
-              <option value="aRED_exercise">aRED Resistive Load Cycle</option>
-              <option value="cycle_ergometer">CEVIS Cycle Ergometer</option>
-            </select>
+          <div className="sm:col-span-2 p-3 rounded-lg bg-slate-950 border border-amber-900/60 text-[11px] text-amber-300">
+            Acquisition source: Manual entry. This record is stored as UNVERIFIED. Do not use this form to represent data as coming from a medical sensor.
           </div>
         </div>
 
