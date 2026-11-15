@@ -11,7 +11,10 @@ import {
   Globe2,
   CheckCircle2,
   ChevronDown,
-  Menu
+  Menu,
+  Camera,
+  Watch,
+  Bluetooth
 } from 'lucide-react';
 
 interface TopStatusBarProps {
@@ -27,6 +30,9 @@ interface TopStatusBarProps {
   onOpenReport: () => void;
   onOpenEnvironment: () => void;
   onToggleMobileNav?: () => void;
+  onOpenCamera?: () => void;
+  onOpenNeckband?: () => void;
+  onOpenDevices?: () => void;
 }
 
 export const TopStatusBar: React.FC<TopStatusBarProps> = ({
@@ -41,7 +47,10 @@ export const TopStatusBar: React.FC<TopStatusBarProps> = ({
   onOpenComparison,
   onOpenReport,
   onOpenEnvironment,
-  onToggleMobileNav
+  onToggleMobileNav,
+  onOpenCamera,
+  onOpenNeckband,
+  onOpenDevices
 }) => {
   const [metString, setMetString] = useState<string>('000:00:00:00');
   const [isCrewMenuOpen, setIsCrewMenuOpen] = useState(false);
@@ -96,6 +105,19 @@ export const TopStatusBar: React.FC<TopStatusBarProps> = ({
           <span className="text-slate-400">MET:</span>
           <span className="font-semibold">{metString}</span>
         </div>
+      </div>
+
+      {/* Always-visible quick access: users should not need to scroll to find hardware tools. */}
+      <div className="order-3 flex w-full flex-wrap items-center gap-2 lg:order-none lg:w-auto">
+        <button onClick={onOpenCamera} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-cyan-800/80 bg-cyan-950/50 px-3 py-2 text-[11px] font-semibold text-cyan-200 hover:bg-cyan-900/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400" aria-label="Open YOLO camera movement test">
+          <Camera className="h-4 w-4" /> <span>YOLO Camera</span>
+        </button>
+        <button onClick={onOpenNeckband} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-amber-800/80 bg-amber-950/30 px-3 py-2 text-[11px] font-semibold text-amber-200 hover:bg-amber-900/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400" aria-label="Open virtual neckband demo">
+          <Watch className="h-4 w-4" /> <span>Virtual Neckband</span>
+        </button>
+        <button onClick={onOpenDevices} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[11px] font-semibold text-slate-200 hover:border-cyan-700 hover:text-cyan-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400" aria-label="Open connected devices">
+          <Bluetooth className="h-4 w-4" /> <span>Devices</span>
+        </button>
       </div>
 
       {/* Middle Tools: Modals Trigger */}

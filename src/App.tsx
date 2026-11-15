@@ -30,6 +30,7 @@ import { YomaMovement } from './views/YomaMovement';
 import { CrewProfiles } from './views/CrewProfiles';
 import { VirtualSmartwatch } from './views/VirtualSmartwatch';
 import { WearableStartGate } from './components/WearableStartGate';
+import { MrsSpaceGuide } from './components/MrsSpaceGuide';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<NavSection>('overview');
@@ -248,6 +249,9 @@ export default function App() {
 
       {/* Main Workspace Column */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+        {/* Friendly onboarding guide sits above the mission controls. */}
+        <MrsSpaceGuide activeSection={activeSection} onNavigate={section => setActiveSection(section)} />
+
         {/* Top Mission Status Bar */}
         <TopStatusBar
           missionName={settings.missionName}
@@ -262,6 +266,9 @@ export default function App() {
           onOpenReport={() => setIsReportOpen(true)}
           onOpenEnvironment={() => setIsEnvironmentOpen(true)}
           onToggleMobileNav={() => setIsMobileNavOpen(prev => !prev)}
+          onOpenCamera={() => setActiveSection('yoma')}
+          onOpenNeckband={() => setActiveSection('smartwatch')}
+          onOpenDevices={() => setActiveSection('smartwatch')}
         />
 
         {/* View Content Area */}
