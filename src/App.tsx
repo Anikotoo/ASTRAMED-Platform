@@ -25,6 +25,7 @@ import { EnvironmentMonitorModal } from './views/EnvironmentMonitorModal';
 import { MissionReportModal } from './views/MissionReportModal';
 import { AlertsCenterModal } from './views/AlertsCenterModal';
 import { YomaMovement } from './views/YomaMovement';
+import { CrewProfiles } from './views/CrewProfiles';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<NavSection>('overview');
@@ -182,7 +183,8 @@ export default function App() {
         importer: 'importer',
         enter_readings: 'enter_readings',
         settings: 'settings',
-        yoma: 'yoma'
+        yoma: 'yoma',
+        crew_profiles: 'crew_profiles'
       };
       if (sectionMap[action.targetSection]) {
         setActiveSection(sectionMap[action.targetSection]);
@@ -322,6 +324,10 @@ export default function App() {
                   selectedCrew={selectedCrew}
                   onReadingAdded={fetchData}
                 />
+              )}
+
+              {activeSection === 'crew_profiles' && (
+                <CrewProfiles crewList={crewList} onSaved={fetchData} />
               )}
 
               {activeSection === 'yoma' && (
