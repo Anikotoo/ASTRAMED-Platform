@@ -47,7 +47,7 @@ export const PhoneCompanion: React.FC = () => {
   async function connect() {
     if (connectLockRef.current || status === 'connected') return;
     connectLockRef.current = true;
-    if (!pairId) { setStatus('error'); setMessage('This pairing link is missing its temporary session ID. Scan a fresh QR code.'); connectLockRef.current = false; return; }
+    if (!pairId) { setStatus('error'); setMessage('This phone link is missing its temporary session ID. Open a fresh link from the computer.'); connectLockRef.current = false; return; }
     if (!/^\d{6}$/.test(pin)) { setStatus('error'); setMessage('Enter the six-digit PIN shown on the computer.'); connectLockRef.current = false; return; }
     setStatus('connecting'); setMessage('Requesting camera permission…');
     try {
@@ -77,12 +77,12 @@ export const PhoneCompanion: React.FC = () => {
             await new Promise(resolve => window.setTimeout(resolve, 600));
             continue;
           }
-          throw new Error(payload.error || 'This pairing session cannot be used. Generate a fresh QR code.');
+          throw new Error(payload.error || 'This pairing session cannot be used. Create a fresh phone session on the computer.');
         }
         joined = await json(response);
         break;
       }
-      if (!joined) throw new Error('The computer did not finish preparing the pairing. Generate a fresh QR code and try again.');
+      if (!joined) throw new Error('The computer did not finish preparing the pairing. Create a fresh phone session and open its link again.');
       setPhoneToken(joined.phoneToken);
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
@@ -105,7 +105,7 @@ export const PhoneCompanion: React.FC = () => {
           setMessage('Connected. Keep this page open; your phone camera is feeding YOMA.');
         } else if (pc.connectionState === 'failed') {
           setStatus('error');
-          setMessage('WebRTC connection failed. Try another network or ask the computer to generate a fresh pairing.');
+          setMessage('WebRTC connection failed. Try another network or ask the computer to create a fresh phone session.');
         } else if (pc.connectionState === 'disconnected') setMessage('Connection interrupted. Trying to reconnect…');
       };
       await pc.setRemoteDescription(joined.offer);
