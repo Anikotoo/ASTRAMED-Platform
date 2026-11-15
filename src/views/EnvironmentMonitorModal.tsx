@@ -84,7 +84,7 @@ export const EnvironmentMonitorModal: React.FC<EnvironmentMonitorModalProps> = (
               <div className="text-3xl font-mono text-cyan-200">{loading && !spaceWeather ? '…' : spaceWeather?.noaa.kpIndex ?? '—'} <span className="text-xs text-slate-500">Kp</span></div>
               <p className="text-[10px] text-slate-500">Global geomagnetic activity indicator. Not an astronaut's personal radiation dose.</p>
               <p className="text-[10px] text-slate-500">Observation: {formatTime(spaceWeather?.noaa.kpTimestamp)}</p>
-              <a className="inline-flex items-center gap-1 text-[10px] text-cyan-300 hover:text-cyan-200" href={spaceWeather?.noaa.kpSourceUrl || 'https://services.swpc.noaa.gov/products/summary/planetary-k-index.json'} target="_blank" rel="noreferrer">NOAA SWPC source <ExternalLink className="h-3 w-3" /></a>
+              <a className="inline-flex items-center gap-1 text-[10px] text-cyan-300 hover:text-cyan-200" href={spaceWeather?.noaa.kpSourceUrl || 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'} target="_blank" rel="noreferrer">NOAA SWPC source <ExternalLink className="h-3 w-3" /></a>
             </div>
             <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-3">
               <div className="flex items-center justify-between gap-2"><div className="flex items-center gap-2 text-xs font-semibold text-white"><Activity className="h-4 w-4 text-cyan-300" /> Solar wind speed</div>{spaceWeather && <Status online={spaceWeather.noaa.status === 'online'} />}</div>
