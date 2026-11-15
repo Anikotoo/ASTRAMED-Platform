@@ -51,7 +51,7 @@ export type HealthParameter =
 
 export type MeasurementStatus = 'normal' | 'attention' | 'critical' | 'unverified';
 
-export type DataSource = 'biomed_telemetry' | 'cycle_ergometer' | 'aRED_exercise' | 'clinical_exam' | 'manual_entry' | 'user_import';
+export type DataSource = 'biomed_telemetry' | 'cycle_ergometer' | 'aRED_exercise' | 'clinical_exam' | 'manual_entry' | 'user_import' | 'sensor_gateway' | 'wearable_sensor';
 
 export interface HealthReading {
   id: string;
@@ -63,6 +63,11 @@ export interface HealthReading {
   unit: string;
   timestamp: string; // ISO 8601
   source: DataSource;
+  reportedSource?: string; // Source label carried by an uploaded file; not independently verified
+  deviceId?: string;
+  sensorType?: string;
+  qualityConfidence?: number;
+  measurementMethod?: string;
   status: MeasurementStatus;
   notes?: string;
   datasetId?: string; // set if imported
