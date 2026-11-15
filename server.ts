@@ -78,8 +78,8 @@ function readDb(): AstramedDatabase {
       settings: parsed.settings || {}
     };
 
-    // One-time cleanup of the repository's fictional Expedition 75 demo crew and telemetry.
-    // Preserve unrelated user-created records and all future camera assessments.
+    // One-time migration: remove fictional demo records and mark manual/imported values as unverified.
+    // Real user-created profiles and authenticated sensor records are preserved.
     const legacyNames = new Set([
       'Sarah Vance',
       'Dr. Andrew Chen',
@@ -103,41 +103,40 @@ function readDb(): AstramedDatabase {
         )
         .map(dataset => dataset.id)
     );
-    const hadLegacyDemoData =
-      legacyCrewIds.size > 0 ||
-      db.readings.some(reading => reading.isBuiltIn === true || legacyCrewIds.has(reading.crewId) || legacyDatasets.has(reading.datasetId || '')) ||
-      legacyDatasets.size > 0 ||
-      db.events.some(event =>
-        legacyCrewIds.has(event.crewId || '') ||
-        /Expedition 75 Telemetry Sample|US EVA-89 Completed|Hypertensive Reading & Muscle Unloading Alert|Autonomous Ultrasound & OCT Scan/i.test(String(event.title || ''))
-      );
-
-    if (hadLegacyDemoData) {
+    const schemaVersion = String(db.settings.schemaVersion || '');
+    if (schemaVersion !== '2.3.0') {
       db.crew = db.crew.filter((member: any) => !legacyCrewIds.has(String(member.id)));
-      db.readings = db.readings.filter(reading =>
-        reading.isBuiltIn !== true &&
-        !legacyCrewIds.has(reading.crewId) &&
-        !legacyDatasets.has(reading.datasetId || '')
-      );
+      db.readings = db.readings
+        .filter(reading =>
+          reading.isBuiltIn !== true &&
+          !legacyCrewIds.has(reading.crewId) &&
+          !legacyDatasets.has(reading.datasetId || '')
+        )
+        .map(reading => {
+          if (reading.datasetId || reading.source === 'user_import') {
+            return {
+              ...reading,
+              reportedSource: reading.reportedSource || reading.source,
+              source: 'user_import',
+              status: 'unverified'
+            };
+          }
+          if (reading.source === 'manual_entry' && reading.status !== 'verified') {
+            return { ...reading, status: 'unverified' };
+          }
+          return reading;
+        });
       db.importedDatasets = db.importedDatasets.filter(dataset => !legacyDatasets.has(dataset.id));
       db.events = db.events.filter(event =>
         !legacyCrewIds.has(event.crewId || '') &&
         !/Expedition 75 Telemetry Sample|US EVA-89 Completed|Hypertensive Reading & Muscle Unloading Alert|Autonomous Ultrasound & OCT Scan/i.test(String(event.title || ''))
       );
-      console.warn('Removed legacy fictional Expedition 75 demo profiles, readings, datasets, and events.');
+      if (db.settings.missionName === 'Astra-X ISS Expedition 75') delete db.settings.missionName;
+      if (db.settings.missionStartDate === '2026-01-05T00:00:00.000Z') delete db.settings.missionStartDate;
+      db.settings.schemaVersion = '2.3.0';
+      console.warn('ASTRAMED database migrated: removed fictional demo records and marked manual/imported readings unverified.');
       writeDb(db);
     }
-
-    let settingsChanged = false;
-    if (db.settings.missionName === 'Astra-X ISS Expedition 75') {
-      delete db.settings.missionName;
-      settingsChanged = true;
-    }
-    if (db.settings.missionStartDate === '2026-01-05T00:00:00.000Z') {
-      delete db.settings.missionStartDate;
-      settingsChanged = true;
-    }
-    if (settingsChanged) writeDb(db);
 
     return db;
   } catch (error) {
