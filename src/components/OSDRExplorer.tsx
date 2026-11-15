@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, Database, ExternalLink, FileDown, Info, Loader2 } from 'lucide-react';
 
 type Study = { id: string; title: string; description: string; organism: string; source: any };
-type StudyFile = { name: string; url: string; type: string; size: string; source: any };
+type StudyFile = { name: string; url: string; type: string; size: string; restricted: boolean; source: any };
 
 const textOf = (...values: unknown[]) => {
   const value = values.find(v => typeof v === 'string' || typeof v === 'number');
@@ -53,7 +53,7 @@ function normalizeFiles(payload: any): StudyFile[] {
 }
 
 export const OSDRExplorer: React.FC = () => {
-  const [term, setTerm] = useState('human spaceflight physiology');
+  const [term, setTerm] = useState('astronaut');
   const [studies, setStudies] = useState<Study[]>([]);
   const [selected, setSelected] = useState<Study | null>(null);
   const [files, setFiles] = useState<StudyFile[]>([]);
@@ -111,7 +111,7 @@ export const OSDRExplorer: React.FC = () => {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
-        <input value={term} onChange={e => setTerm(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') search(); }} placeholder="Search e.g. human astronaut bone loss" className="flex-1 min-w-0 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500" />
+        <input value={term} onChange={e => setTerm(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') search(); }} placeholder="Search e.g. astronaut, bone loss, muscle atrophy" className="flex-1 min-w-0 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500" />
         <button onClick={search} disabled={loadingSearch || !term.trim()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 px-4 py-2 text-xs font-bold text-white">
           {loadingSearch ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />} Search OSDR
         </button>
@@ -142,7 +142,7 @@ export const OSDRExplorer: React.FC = () => {
         </div>
         {loadingFiles ? <div className="text-xs text-slate-400 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading file catalog…</div> : files.length > 0 ? files.map((file, index) => <div key={index} className="flex items-start justify-between gap-3 border-t border-slate-800 pt-2">
           <div className="min-w-0"><div className="text-xs text-slate-200 break-all">{file.name}</div><div className="text-[10px] text-slate-500 mt-1">{file.type}{file.size ? ` · ${file.size}` : ''}</div></div>
-          {file.url && <a href={file.url} target="_blank" rel="noreferrer" className="shrink-0 text-cyan-300" title="Open original NASA file"><FileDown className="w-4 h-4" /></a>}
+          {file.restricted ? <span className="shrink-0 text-[10px] text-amber-300">RESTRICTED · request access</span> : file.url && <a href={file.url} target="_blank" rel="noreferrer" className="shrink-0 text-cyan-300" title="Open original NASA file"><FileDown className="w-4 h-4" /></a>}
         </div>) : !loadingFiles && <p className="text-xs text-slate-400">Open the NASA study page's Files panel to inspect the full file catalog and download the original archive. Extract it locally if it is ZIP/TAR before reviewing any CSV.</p>}
       </div>}
 
