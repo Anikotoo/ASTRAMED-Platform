@@ -48,7 +48,14 @@ export default function App() {
   const [phoneCameraStream, setPhoneCameraStream] = useState<MediaStream | null>(null);
   const [phoneSpeak, setPhoneSpeak] = useState<((text: string) => boolean) | null>(null);
   const [sendNeckbandState, setSendNeckbandState] = useState<((state: any) => void) | null>(null);
-  const handleNeckbandStateChange = useCallback((state: any) => sendNeckbandState?.(state), [sendNeckbandState]);
+  const [neckbandDemoState, setNeckbandDemoState] = useState<any>(null);
+  const handleNeckbandStateChange = useCallback((state: any) => {
+    setNeckbandDemoState(state);
+    sendNeckbandState?.(state);
+  }, [sendNeckbandState]);
+  useEffect(() => {
+    if (sendNeckbandState && neckbandDemoState) sendNeckbandState(neckbandDemoState);
+  }, [sendNeckbandState, neckbandDemoState]);
 
   // Modals state
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
