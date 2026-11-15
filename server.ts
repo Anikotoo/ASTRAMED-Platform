@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 
-import { evaluateAlerts } from './src/utils/alertEngine';
+import { DEFAULT_MISSION_SETTINGS, evaluateAlerts } from './src/utils/alertEngine';
 import { searchResearchStudies } from './src/utils/researchData';
 import {
   HealthReading,
@@ -366,7 +366,15 @@ function getStudyContext(study: any) {
 
 function getAlerts(db: AstramedDatabase) {
   try {
-    return evaluateAlerts(db.readings || [], db.settings || {});
+    const settings: MissionSettings = {
+      ...DEFAULT_MISSION_SETTINGS,
+      ...(db.settings || {}),
+      thresholds: {
+        ...DEFAULT_MISSION_SETTINGS.thresholds,
+        ...((db.settings || {}).thresholds || {})
+      }
+    };
+    return evaluateAlerts(db.readings || [], settings);
   } catch (error) {
     console.error('Alert evaluation failed:', error);
     return [];
