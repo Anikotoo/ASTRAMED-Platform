@@ -11,20 +11,20 @@ export interface CrewMember {
   callsign: string;
   role: CrewRole;
   mission: string;
-  age: number;
-  sex: 'male' | 'female';
-  bloodType: string;
-  evaCount: number;
-  daysInOrbit: number;
-  avatarSeed: string;
-  baseline: {
-    restingHeartRate: number; // bpm
-    bloodPressureSys: number; // mmHg
-    bloodPressureDia: number; // mmHg
-    weightKg: number;
-    vo2Max: number; // mL/kg/min
-    boneDensityTScore: number;
-    quadStrengthBaseline: number; // N
+  age?: number;
+  sex?: 'male' | 'female';
+  bloodType?: string;
+  evaCount?: number;
+  daysInOrbit?: number;
+  avatarSeed?: string;
+  baseline?: {
+    restingHeartRate?: number; // bpm
+    bloodPressureSys?: number; // mmHg
+    bloodPressureDia?: number; // mmHg
+    weightKg?: number;
+    vo2Max?: number; // mL/kg/min
+    boneDensityTScore?: number;
+    quadStrengthBaseline?: number; // N
   };
 }
 
