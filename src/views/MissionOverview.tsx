@@ -1,5 +1,6 @@
 import React from 'react';
 import { EarthGlobe } from '../components/EarthGlobe';
+import { ChallengeResourcesPanel } from '../components/ChallengeResourcesPanel';
 import { CrewMember, HealthReading, HealthAlert, HealthEvent } from '../types/astramed';
 import { 
   Users, 
@@ -159,6 +160,8 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
       <div className="overview-reveal overview-delay-3">
         <EarthGlobe />
       </div>
+
+      <ChallengeResourcesPanel compact />
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_.8fr] overview-stagger overview-delay-4">
         <div className="overview-card relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/30 p-5 shadow-[0_0_40px_rgba(8,145,178,.08)]">
