@@ -59,9 +59,9 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overview-page">
       {/* Top Banner & High-Level KPIs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800 p-4 rounded-xl backdrop-blur-sm">
+      <div className="overview-reveal overview-delay-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800 p-4 rounded-xl backdrop-blur-sm">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
             <Radio className="w-3.5 h-3.5 text-cyan-400" />
@@ -101,9 +101,9 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
       </div>
 
       {/* 4 Metric Counter Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overview-stagger overview-delay-2">
         {/* Monitored Crew */}
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+        <div className="overview-card bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-xs font-mono uppercase tracking-wider">Monitored Crew</span>
             <Users className="w-4 h-4 text-cyan-400" />
@@ -125,7 +125,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
         {/* Active Health Alerts */}
         <div 
           onClick={onOpenAlerts}
-          className="bg-slate-900/80 border border-slate-800 hover:border-amber-500/50 p-4 rounded-xl cursor-pointer transition-colors"
+          className="overview-card bg-slate-900/80 border border-slate-800 hover:border-amber-500/50 p-4 rounded-xl cursor-pointer transition-colors"
         >
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-xs font-mono uppercase tracking-wider">Active Health Alerts</span>
@@ -156,16 +156,18 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
         </div>
       </div>
 
-      <EarthGlobe />
+      <div className="overview-reveal overview-delay-3">
+        <EarthGlobe />
+      </div>
 
-      <section className="grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
-        <div className="relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/30 p-5 shadow-[0_0_40px_rgba(8,145,178,.08)]">
+      <section className="grid gap-4 lg:grid-cols-[1.2fr_.8fr] overview-stagger overview-delay-4">
+        <div className="overview-card relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/30 p-5 shadow-[0_0_40px_rgba(8,145,178,.08)]">
           <div className="text-[10px] font-mono tracking-[.25em] text-cyan-300">MOBILITY & PERFORMANCE</div>
           <h2 className="mt-2 text-lg font-bold text-white">YOMA Mobility Assessment</h2>
           <p className="mt-1 max-w-xl text-xs leading-relaxed text-slate-400">Run a camera-based movement assessment with local pose estimation, quality checks and a saved assessment record.</p>
           <button onClick={() => onNavigate('yoma')} className="mt-4 rounded-lg bg-cyan-500 px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-cyan-300">Open YOMA Camera ↗</button>
         </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+        <div className="overview-card rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
           <div className="text-[10px] font-mono tracking-[.25em] text-cyan-300">WEARABLE SYSTEMS</div>
           <h2 className="mt-2 text-lg font-bold text-white">Virtual Neckband & Devices</h2>
           <p className="mt-1 text-xs leading-relaxed text-slate-400">Open the live camera overlay lab or connect a compatible Bluetooth heart-rate device.</p>
@@ -174,7 +176,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
       </section>
 
       {/* Crew Health Roster Grid */}
-      <div>
+      <div className="overview-reveal overview-delay-5">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
             <Users className="w-4 h-4 text-cyan-400" />
@@ -189,7 +191,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 overview-stagger">
           {crewList.length === 0 ? (
             <div className="p-8 rounded-xl border border-dashed border-slate-700 text-center text-xs text-slate-400">No astronaut profiles have been added. Add a real profile or import a verified crew dataset before monitoring individuals.</div>
           ) : crewList.map(crew => {
@@ -199,7 +201,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
               <div
                 key={crew.id}
                 onClick={() => onSelectCrew(crew)}
-                className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                className={`overview-card p-4 rounded-xl border transition-all cursor-pointer ${
                   isSelected
                     ? 'bg-slate-900 border-cyan-500 shadow-lg shadow-cyan-950/40'
                     : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
@@ -259,7 +261,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
       </div>
 
       {/* Split Section: Recent Readings & Active Alerts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overview-reveal overview-delay-6">
         {/* Latest Readings Feed */}
         <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
           <div className="flex items-center justify-between mb-3">
@@ -282,7 +284,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
               return (
                 <div
                   key={r.id}
-                  className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 text-xs"
+                  className="overview-card flex items-center justify-between p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 text-xs"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-2 h-2 rounded-full ${
