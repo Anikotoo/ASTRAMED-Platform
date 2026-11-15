@@ -36,6 +36,7 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
     return <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-8 text-center"><Activity className="w-8 h-8 text-slate-500 mx-auto mb-3" /><h2 className="text-base font-bold text-white">No astronaut profile available</h2><p className="text-xs text-slate-400 mt-2">No crew profile or verified health reading has been added yet. Import a verified dataset or add a real crew profile before viewing personal telemetry.</p></div>;
   }
   const crewReadings = readings.filter(r => r.crewId === activeCrew?.id);
+  const unverifiedCount = crewReadings.filter(reading => reading.status === 'unverified').length;
 
   // Helper to extract latest value
   const getLatest = (param: string): number | string => {
@@ -79,6 +80,8 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
           );
         })}
       </div>
+
+      {unverifiedCount > 0 && <div className="p-3 rounded-lg border border-amber-800/70 bg-amber-950/30 text-[11px] text-amber-200">{unverifiedCount} reading(s) for this profile are unverified manual/imported records. Values are displayed as supplied, not confirmed medical telemetry.</div>}
 
       {/* Main 2-Column Section: 3D Body Map & Clinical Telemetry Cards */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
