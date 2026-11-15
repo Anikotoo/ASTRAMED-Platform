@@ -49,7 +49,8 @@ export const TopStatusBar: React.FC<TopStatusBarProps> = ({
   // Calculate Mission Elapsed Time (MET)
   useEffect(() => {
     const updateMet = () => {
-      const start = new Date(missionStartDate).getTime();
+      const start = missionStartDate ? new Date(missionStartDate).getTime() : NaN;
+      if (!Number.isFinite(start)) { setMetString('NOT SET'); return; }
       const now = Date.now();
       const diff = Math.max(0, now - start);
 
@@ -87,7 +88,7 @@ export const TopStatusBar: React.FC<TopStatusBarProps> = ({
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-none"></span>
           <span className="font-bold text-white text-sm tracking-wide">{missionName}</span>
-          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-cyan-300 border border-slate-700">LEO ORBIT</span>
+          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-cyan-300 border border-slate-700">MISSION STATUS</span>
         </div>
 
         <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-slate-900 border border-slate-800 rounded-md text-cyan-400">
