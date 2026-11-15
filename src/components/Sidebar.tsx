@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   Rocket,
   ScanLine,
-  UserPlus
+  UserPlus,
+  Watch
 } from 'lucide-react';
 
 export type NavSection = 
@@ -24,7 +25,8 @@ export type NavSection =
   | 'enter_readings' 
   | 'settings'
   | 'yoma'
-  | 'crew_profiles';
+  | 'crew_profiles'
+  | 'smartwatch';
 
 interface SidebarProps {
   activeSection: NavSection;
@@ -46,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'crew_body', label: 'Crew & Body Monitor', icon: UserCheck },
     { id: 'trends', label: 'Health Trends', icon: LineChart },
     { id: 'yoma', label: 'YOMA Mobility Test', icon: ScanLine },
+    { id: 'smartwatch', label: 'Virtual Smartwatch', icon: Watch },
     { id: 'crew_profiles', label: 'Crew Profiles', icon: UserPlus },
     { id: 'ai_assistant', label: 'AI Assistant', icon: Bot },
     { id: 'research', label: 'Research Library', icon: BookOpen },
