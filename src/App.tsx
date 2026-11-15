@@ -28,6 +28,8 @@ import { YomaMovement } from './views/YomaMovement';
 import { CrewProfiles } from './views/CrewProfiles';
 import { VirtualSmartwatch } from './views/VirtualSmartwatch';
 import { WearableStartGate } from './components/WearableStartGate';
+import { PhonePairingPanel } from './components/PhonePairingPanel';
+import { PhoneCompanion } from './views/PhoneCompanion';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<NavSection>('overview');
@@ -43,6 +45,8 @@ export default function App() {
   const [sensorIngestConfigured, setSensorIngestConfigured] = useState<boolean>(false);
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
   const [showWearableStartGate, setShowWearableStartGate] = useState<boolean>(true);
+  const [phoneCameraStream, setPhoneCameraStream] = useState<MediaStream | null>(null);
+  const [phoneSpeak, setPhoneSpeak] = useState<((text: string) => boolean) | null>(null);
 
   // Modals state
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
@@ -222,11 +226,14 @@ export default function App() {
     setActiveSection('ai_assistant');
   };
 
+  if (window.location.pathname === '/phone-companion') return <PhoneCompanion />;
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans select-none">
       {!isLoadingInitial && showWearableStartGate && (
         <WearableStartGate
           onConnect={() => { setActiveSection('smartwatch'); setShowWearableStartGate(false); }}
+          onPhone={() => { setActiveSection('yoma'); setShowWearableStartGate(false); }}
           onVirtual={() => { setActiveSection('smartwatch'); setShowWearableStartGate(false); }}
           onContinue={() => setShowWearableStartGate(false)}
         />
@@ -349,7 +356,10 @@ export default function App() {
               )}
 
               {activeSection === 'yoma' && (
-                <YomaMovement assessments={movementAssessments} crewList={crewList} onRefresh={fetchData} />
+                <div className="space-y-4">
+                  <PhonePairingPanel onCameraStream={setPhoneCameraStream} onSpeakReady={speak => setPhoneSpeak(() => speak)} />
+                  <YomaMovement assessments={movementAssessments} crewList={crewList} onRefresh={fetchData} externalCameraStream={phoneCameraStream} onPhoneSpeak={text => phoneSpeak?.(text) || false} />
+                </div>
               )}
 
               {activeSection === 'settings' && (
