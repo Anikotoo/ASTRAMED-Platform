@@ -69,7 +69,7 @@ export const MissionReportModal: React.FC<MissionReportModalProps> = ({
               </div>
               <div className="text-right font-mono text-[11px] text-slate-400">
                 <div>SECURITY: UNCLASSIFIED</div>
-                <div>DOC-ID: ASTRAMED-EXP75-{selectedCrew?.callsign?.toUpperCase()}</div>
+                <div>DOC-ID: ASTRAMED-{selectedCrew?.callsign?.toUpperCase() || 'UNASSIGNED'}</div>
               </div>
             </div>
           </div>
