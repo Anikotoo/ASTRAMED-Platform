@@ -32,8 +32,8 @@ const formatTime = (value?: string) => {
 };
 
 const Status = ({ online }: { online: boolean }) => (
-  <span className={\`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-mono \${online ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}\`}>
-    <span className={\`h-1.5 w-1.5 rounded-full \${online ? 'bg-emerald-400' : 'bg-amber-400'}\`} />
+  <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-mono ${online ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}`}>
+    <span className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-emerald-400' : 'bg-amber-400'}`} />
     {online ? 'SOURCE ONLINE' : 'SOURCE UNAVAILABLE'}
   </span>
 );
@@ -48,7 +48,7 @@ export const EnvironmentMonitorModal: React.FC<EnvironmentMonitorModalProps> = (
     setLoadError(null);
     try {
       const response = await fetch('/api/space-weather', { headers: { Accept: 'application/json' } });
-      if (!response.ok) throw new Error(\`Space-weather service returned HTTP \${response.status}\`);
+      if (!response.ok) throw new Error(`Space-weather service returned HTTP ${response.status}`);
       const data = await response.json() as SpaceWeatherData;
       setSpaceWeather(data);
     } catch (error) {
@@ -72,7 +72,7 @@ export const EnvironmentMonitorModal: React.FC<EnvironmentMonitorModalProps> = (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2"><Satellite className="w-4 h-4 text-cyan-300" /><h3 className="text-sm font-bold text-white">Live Space Weather — External Data</h3></div>
             <button onClick={() => void loadSpaceWeather()} disabled={loading} className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-800 bg-cyan-950/60 px-3 py-1.5 text-[11px] font-mono text-cyan-200 hover:bg-cyan-900 disabled:opacity-50">
-              <RefreshCw className={\`h-3.5 w-3.5 \${loading ? 'animate-spin' : ''}\`} /> {loading ? 'UPDATING' : 'REFRESH'}
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> {loading ? 'UPDATING' : 'REFRESH'}
             </button>
           </div>
 
@@ -102,7 +102,7 @@ export const EnvironmentMonitorModal: React.FC<EnvironmentMonitorModalProps> = (
           <p className="text-[11px] text-slate-400">NASA event notices and analyses from the last seven days. These describe solar and heliophysics events, not individual crew exposure.</p>
           {loading && !spaceWeather ? <div className="rounded-lg border border-slate-800 bg-slate-950 p-4 text-xs text-cyan-300">Retrieving NASA event notices…</div> :
             spaceWeather?.nasa.events.length ? <div className="space-y-2">{spaceWeather.nasa.events.map((event, index) => (
-              <article key={\`\${event.issuedAt}-\${index}\`} className="rounded-lg border border-slate-800 bg-slate-950 p-3 space-y-2">
+              <article key={`${event.issuedAt}-${index}`} className="rounded-lg border border-slate-800 bg-slate-950 p-3 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded bg-cyan-950 px-2 py-1 text-[10px] font-mono text-cyan-200">{event.type}</span><span className="text-[10px] text-slate-500">{formatTime(event.issuedAt)}</span></div>
                 <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-300">{event.body}</p>
                 <a href={event.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] text-cyan-300 hover:text-cyan-200">Open NASA event <ExternalLink className="h-3 w-3" /></a>
