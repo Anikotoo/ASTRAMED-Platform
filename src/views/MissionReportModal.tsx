@@ -8,6 +8,7 @@ interface MissionReportModalProps {
   readings: HealthReading[];
   alerts: HealthAlert[];
   missionName: string;
+  isDemoMode?: boolean;
   onClose: () => void;
 }
 
@@ -16,6 +17,7 @@ export const MissionReportModal: React.FC<MissionReportModalProps> = ({
   readings,
   alerts,
   missionName,
+  isDemoMode = false,
   onClose
 }) => {
   const crewReadings = readings.filter(r => r.crewId === selectedCrew?.id);
@@ -54,6 +56,7 @@ export const MissionReportModal: React.FC<MissionReportModalProps> = ({
 
         {/* Report Document Content */}
         <div className="space-y-6 font-sans text-xs">
+          {isDemoMode && <div className="border-2 border-amber-500 bg-amber-100 p-4 text-center font-mono text-sm font-black tracking-wider text-amber-950 print:border-4">SIMULATED DEMO REPORT — ALL CREW AND HEALTH VALUES ARE FICTIONAL. NOT REAL SENSOR OR NASA DATA.</div>}
           {/* Document Header */}
           <div className="border-b-2 border-cyan-500 pb-4">
             <div className="flex justify-between items-start">
