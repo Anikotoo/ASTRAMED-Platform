@@ -72,7 +72,7 @@ export const CrewComparisonModal: React.FC<CrewComparisonModalProps> = ({
               ))}
             </select>
             <div className="mt-2 text-[11px] font-mono text-slate-400">
-              Age: {crewA?.age} • Days in Orbit: {crewA?.daysInOrbit} • {crewA?.evaCount} EVAs
+              Age: {crewA?.age ?? 'Not supplied'} • Orbit days: {crewA?.daysInOrbit ?? 'Not supplied'} • EVAs: {crewA?.evaCount ?? 'Not supplied'}
             </div>
           </div>
 
@@ -88,7 +88,7 @@ export const CrewComparisonModal: React.FC<CrewComparisonModalProps> = ({
               ))}
             </select>
             <div className="mt-2 text-[11px] font-mono text-slate-400">
-              Age: {crewB?.age} • Days in Orbit: {crewB?.daysInOrbit} • {crewB?.evaCount} EVAs
+              Age: {crewB?.age ?? 'Not supplied'} • Orbit days: {crewB?.daysInOrbit ?? 'Not supplied'} • EVAs: {crewB?.evaCount ?? 'Not supplied'}
             </div>
           </div>
         </div>
