@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bluetooth, Camera, ChevronRight, Radio, Smartphone, Watch } from 'lucide-react';
+import { Bluetooth, ChevronRight, Radio, Smartphone, Watch } from 'lucide-react';
 
 interface WearableStartGateProps {
   onConnect: () => void;
