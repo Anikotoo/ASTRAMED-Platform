@@ -1462,7 +1462,7 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
       '12. Ask one clarification if the crew member or measurement is ambiguous.',
       '13. Separate measured readings, crew baseline, derived summaries, alert-engine outputs and general scientific knowledge.',
       '14. Never claim a trend from one measurement; state record count and time span used. If included records are unverified, describe any pattern only as provisional/exploratory and do not present it as a verified sensor trend.',
-      '15. Cite only IDs in SOURCE REGISTER using [D1], [D2], [D3] or [R1]. Never invent papers, DOI values, authors, URLs or citations.',
+      '15. Cite only IDs present in SOURCE REGISTER using [C1]-[C5], [D1]-[D3] or [R1]. Never invent papers, DOI values, authors, URLs or citations.',
       '16. A Research Library record is not proof that the full paper was reviewed. Distinguish abstract/metadata from the full publication.',
       '17. Without a supplied research source, label scientific claims as general background and do not attach a fabricated citation.',
       '17a. Challenge resource citations [C1]-[C5] are NASA/CSA scientific background only. Cite them when relevant, but never describe them as live telemetry, current environmental readings, or measurements for an individual crew member.',
