@@ -477,7 +477,7 @@ app.get('/api/space-weather', async (_req: Request, res: Response) => {
   nasaUrl.searchParams.set('type', 'all');
   nasaUrl.searchParams.set('api_key', process.env.NASA_API_KEY || 'DEMO_KEY');
 
-  const kpUrl = 'https://services.swpc.noaa.gov/products/summary/planetary-k-index.json';
+  const kpUrl = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json';
   const windUrl = 'https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json';
   const [nasaResult, kpResult, windResult] = await Promise.allSettled([
     fetchExternalJson(nasaUrl.toString()),
