@@ -64,8 +64,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside className={`
-        fixed md:static top-0 bottom-0 left-0 z-50 w-64 bg-slate-950 border-r border-slate-800/80 
-        flex flex-col justify-between shrink-0 h-full select-none transition-transform duration-200
+        fixed md:static top-0 bottom-0 left-0 z-50 w-[min(18rem,88vw)] md:w-64 bg-slate-950 border-r border-slate-800/80 
+        flex flex-col justify-between shrink-0 h-[100dvh] md:h-full select-none transition-transform duration-200
         ${isOpenMobile ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
       {/* Brand & Subtitle */}
