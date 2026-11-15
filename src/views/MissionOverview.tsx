@@ -62,13 +62,13 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
             <Radio className="w-3.5 h-3.5 text-cyan-400" />
-            <span>MISSION CONTROL BIOMEDICAL TELEMETRY STREAM</span>
+            <span>{readings.length > 0 ? 'MISSION HEALTH DATA WORKSPACE' : 'NO LIVE TELEMETRY CONNECTED'}</span>
           </div>
           <h1 className="text-xl font-bold text-white tracking-wide mt-1">
-            Expedition 75 — Real-Time Health & Decision Support
+            ASTRAMED — Health & Decision Support
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Synchronized biomedical telemetry, microgravity physiological surveillance, and AI countermeasure assistance.
+            Camera assessments, verified health readings, sensor integration and research-backed decision support.
           </p>
         </div>
 
@@ -99,7 +99,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
             <Users className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-2xl font-bold text-white font-mono">{crewList.length}</div>
-          <div className="text-[11px] text-slate-400 mt-1">4 Astronauts Active in Orbit</div>
+          <div className="text-[11px] text-slate-400 mt-1">Profiles actually configured</div>
         </div>
 
         {/* Total Readings Logged */}
@@ -109,7 +109,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
             <Activity className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-2xl font-bold text-white font-mono">{readings.length}</div>
-          <div className="text-[11px] text-emerald-400 mt-1">100% Persisted Storage</div>
+          <div className="text-[11px] text-slate-400 mt-1">Saved records only</div>
         </div>
 
         {/* Active Health Alerts */}
@@ -140,9 +140,9 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
           </div>
           <div className="text-lg font-bold text-white font-mono flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>PERSISTENT</span>
+            <span>DATABASE</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">Filesystem JSON DB Verified</div>
+          <div className="text-[11px] text-slate-400 mt-1">Persistent storage configured</div>
         </div>
       </div>
 
@@ -163,7 +163,9 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {crewList.map(crew => {
+          {crewList.length === 0 ? (
+            <div className="p-8 rounded-xl border border-dashed border-slate-700 text-center text-xs text-slate-400">No astronaut profiles have been added. Add a real profile or import a verified crew dataset before monitoring individuals.</div>
+          ) : crewList.map(crew => {
             const vitals = getCrewQuickVitals(crew.id);
             const isSelected = selectedCrew?.id === crew.id;
             return (
@@ -244,7 +246,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
           </div>
 
           <div className="space-y-2">
-            {recentReadings.map(r => {
+            {recentReadings.length === 0 ? <div className="p-6 text-center text-xs text-slate-500">No verified health readings received yet.</div> : recentReadings.map(r => {
               const crew = crewList.find(c => c.id === r.crewId);
               return (
                 <div
@@ -297,7 +299,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
 
           {alerts.length === 0 ? (
             <div className="p-6 text-center text-slate-400 text-xs font-mono">
-              All monitored physiological parameters are currently within configured mission limits.
+              {readings.length === 0 ? 'No health readings received. Health status is unknown, not nominal.' : 'No alerts generated from the currently available records.'}
             </div>
           ) : (
             <div className="space-y-3">
