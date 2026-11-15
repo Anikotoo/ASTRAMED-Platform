@@ -5,6 +5,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import { randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 
 import { DEFAULT_MISSION_SETTINGS, evaluateAlerts } from './src/utils/alertEngine';
 import { searchResearchStudies } from './src/utils/researchData';
@@ -26,7 +27,96 @@ const DATA_DIR = process.env.ASTRAMED_DATA_DIR || path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'astramed-db.json');
 const SEED_DB_PATH = path.join(__dirname, 'data', 'astramed-db.json');
 
+
 app.use(express.json({ limit: '10mb' }));
+
+// ============================================================
+// TEMPORARY PHONE COMPANION SIGNALING (NO MEDIA STORED ON SERVER)
+// ============================================================
+interface PhonePairSession {
+  id: string;
+  pin: string;
+  hostToken: string;
+  phoneToken?: string;
+  offer?: RTCSessionDescriptionInit;
+  answer?: RTCSessionDescriptionInit;
+  expiresAt: number;
+  pinAttempts: number;
+}
+const phonePairSessions = new Map<string, PhonePairSession>();
+const PAIR_TTL_MS = 5 * 60 * 1000;
+const randomToken = (bytes = 32) => randomBytes(bytes).toString('base64url');
+const tokenMatches = (provided: string, expected: string) => {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+};
+const bearer = (req: Request) => String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+const validSdp = (value: any) => value && typeof value === 'object' &&
+  ['offer', 'answer'].includes(value.type) && typeof value.sdp === 'string' && value.sdp.length < 100000;
+function getPair(req: Request, res: Response): PhonePairSession | null {
+  const pair = phonePairSessions.get(String(req.params.pairId || ''));
+  if (!pair || pair.expiresAt <= Date.now()) {
+    if (pair) phonePairSessions.delete(pair.id);
+    res.status(404).json({ error: 'Pairing session expired or not found. Generate a new QR code.' });
+    return null;
+  }
+  return pair;
+}
+app.post('/api/phone-pairing/create', (_req: Request, res: Response) => {
+  for (const [id, pair] of phonePairSessions) if (pair.expiresAt <= Date.now()) phonePairSessions.delete(id);
+  if (phonePairSessions.size >= 100) {
+    res.status(503).json({ error: 'Too many active pairing sessions. Try again shortly.' });
+    return;
+  }
+  const id = randomToken(18);
+  const session: PhonePairSession = {
+    id,
+    pin: String(randomInt(0, 1000000)).padStart(6, '0'),
+    hostToken: randomToken(),
+    expiresAt: Date.now() + PAIR_TTL_MS,
+    pinAttempts: 0
+  };
+  phonePairSessions.set(id, session);
+  res.status(201).json({ pairId: id, pin: session.pin, hostToken: session.hostToken, expiresAt: new Date(session.expiresAt).toISOString() });
+});
+app.post('/api/phone-pairing/:pairId/offer', (req: Request, res: Response) => {
+  const pair = getPair(req, res); if (!pair) return;
+  if (!tokenMatches(bearer(req), pair.hostToken)) return res.status(401).json({ error: 'Host authorization failed.' });
+  if (!validSdp(req.body?.sdp) || req.body.sdp.type !== 'offer') return res.status(400).json({ error: 'A valid WebRTC offer is required.' });
+  pair.offer = req.body.sdp;
+  res.status(204).end();
+});
+app.post('/api/phone-pairing/:pairId/join', (req: Request, res: Response) => {
+  const pair = getPair(req, res); if (!pair) return;
+  if (pair.phoneToken) return res.status(409).json({ error: 'This pairing session has already been used.' });
+  pair.pinAttempts += 1;
+  if (pair.pinAttempts > 8) { phonePairSessions.delete(pair.id); return res.status(429).json({ error: 'Too many incorrect PIN attempts. Start a new pairing.' }); }
+  const submittedPin = String(req.body?.pin || '');
+  if (!/^\d{6}$/.test(submittedPin) || !tokenMatches(submittedPin, pair.pin)) return res.status(401).json({ error: 'Incorrect pairing PIN.' });
+  if (!pair.offer) return res.status(409).json({ error: 'The computer is not ready yet. Try again in a moment.' });
+  pair.phoneToken = randomToken();
+  res.json({ phoneToken: pair.phoneToken, offer: pair.offer, expiresAt: new Date(pair.expiresAt).toISOString() });
+});
+app.post('/api/phone-pairing/:pairId/answer', (req: Request, res: Response) => {
+  const pair = getPair(req, res); if (!pair) return;
+  if (!pair.phoneToken || !tokenMatches(bearer(req), pair.phoneToken)) return res.status(401).json({ error: 'Phone authorization failed.' });
+  if (!validSdp(req.body?.sdp) || req.body.sdp.type !== 'answer') return res.status(400).json({ error: 'A valid WebRTC answer is required.' });
+  pair.answer = req.body.sdp;
+  res.status(204).end();
+});
+app.get('/api/phone-pairing/:pairId/answer', (req: Request, res: Response) => {
+  const pair = getPair(req, res); if (!pair) return;
+  if (!tokenMatches(bearer(req), pair.hostToken)) return res.status(401).json({ error: 'Host authorization failed.' });
+  if (!pair.answer) return res.status(204).end();
+  res.json({ sdp: pair.answer });
+});
+app.delete('/api/phone-pairing/:pairId', (req: Request, res: Response) => {
+  const pair = getPair(req, res); if (!pair) return;
+  if (!tokenMatches(bearer(req), pair.hostToken) && (!pair.phoneToken || !tokenMatches(bearer(req), pair.phoneToken))) return res.status(401).json({ error: 'Pairing authorization failed.' });
+  phonePairSessions.delete(pair.id);
+  res.status(204).end();
+});
 
 // ============================================================
 // DATABASE
