@@ -53,8 +53,8 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
     const sleep = crewReadings.find(r => r.parameter === 'sleep_duration')?.value || '--';
     const hasAlert = alerts.some(a => a.crewId === crewId);
     const hasData = crewReadings.length > 0;
-    const hasVerifiedData = crewReadings.some(reading => reading.status !== 'unverified');
-    return { hr, sys, quad, sleep, hasAlert, hasData, hasVerifiedData };
+    const hasUnverifiedData = crewReadings.some(reading => reading.status === 'unverified');
+    return { hr, sys, quad, sleep, hasAlert, hasData, hasUnverifiedData };
   };
 
   return (
@@ -199,8 +199,8 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
                   </div>
                   {!vitals.hasData ? (
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">NO DATA</span>
-                  ) : !vitals.hasVerifiedData ? (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-300 border border-amber-800">UNVERIFIED</span>
+                  ) : vitals.hasUnverifiedData ? (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-300 border border-amber-800">UNVERIFIED DATA</span>
                   ) : vitals.hasAlert ? (
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-400 border border-amber-800">
                       ALERT
@@ -312,7 +312,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
 
           {alerts.length === 0 ? (
             <div className="p-6 text-center text-slate-400 text-xs font-mono">
-              {readings.length === 0 ? 'No health readings received. Health status is unknown, not nominal.' : 'No alerts generated from the currently available records.'}
+              {readings.length === 0 ? 'No health readings received. Health status is unknown, not nominal.' : 'No verified alert conditions are currently generated. Unverified records are excluded from alert evaluation.'}
             </div>
           ) : (
             <div className="space-y-3">
