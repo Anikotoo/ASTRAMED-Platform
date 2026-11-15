@@ -5,7 +5,6 @@ import { CrewMember } from '../types/astramed';
 interface VirtualSmartwatchProps {
   crewList: CrewMember[];
   selectedCrew: CrewMember | null;
-  onDemoStateChange?: (state: any) => void;
 }
 
 interface BluetoothDeviceLike {
@@ -29,7 +28,7 @@ function formatDuration(totalSeconds: number): string {
   return `${minutes}:${seconds}`;
 }
 
-export const VirtualSmartwatch: React.FC<VirtualSmartwatchProps> = ({ crewList, selectedCrew, onDemoStateChange }) => {
+export const VirtualSmartwatch: React.FC<VirtualSmartwatchProps> = ({ crewList, selectedCrew }) => {
   const [crewId, setCrewId] = useState(selectedCrew?.id || crewList[0]?.id || '');
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -93,10 +92,6 @@ export const VirtualSmartwatch: React.FC<VirtualSmartwatchProps> = ({ crewList, 
     ? (metrics.lowOxygenDemo ? 'DEMO ALERT: Simulated SpO₂ is below the demo threshold.' : metrics.lowHeartRateDemo ? 'DEMO ALERT: Simulated heart rate is below the demo threshold.' : '')
     : '';
 
-  // Mirror the exact PC demo state to the paired phone over the WebRTC data channel.
-  useEffect(() => {
-    onDemoStateChange?.({ elapsedSeconds, isRunning, sessionFinished, metrics, alert: activeDemoAlert });
-  }, [onDemoStateChange, elapsedSeconds, isRunning, sessionFinished, metrics, activeDemoAlert]);
 
   const playAlarm = async () => {
     if (!soundEnabled) return;
