@@ -1573,8 +1573,16 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
       }
     }
 
+    // Preserve the last user request for deterministic offline follow-ups too.
+    const previousUserRequest = [...history].reverse().find(item => item.role === 'user')?.content || '';
+    const normalizedCurrentMessage = normalize(String(message));
+    const isContextualFollowUp = /^(and|what about|how about|why|explain that|more|then|its|their|what next|compare it|same for)\\b/.test(normalizedCurrentMessage);
+    const offlineQuery = isContextualFollowUp && previousUserRequest
+      ? String(message) + ' ' + previousUserRequest
+      : String(message);
+
     const offlineResult = buildOfflineAnswer(
-      String(message),
+      offlineQuery,
       db,
       crewMember,
       selectedStudy,
