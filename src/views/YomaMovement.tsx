@@ -61,6 +61,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, onRefresh }) => {
   const [subjectLabel, setSubjectLabel] = useState('Anonymous crew member');
   const [status, setStatus] = useState<'idle' | 'loading' | 'running' | 'saving' | 'done' | 'error'>('idle');
   const [elapsed, setElapsed] = useState(0);
+  const inferenceIntervalRef = useRef<number | null>(null);
   const [message, setMessage] = useState('');
   const [modelDevice, setModelDevice] = useState('');
   const [liveConfidence, setLiveConfidence] = useState(0);
@@ -78,7 +79,9 @@ export const YomaMovement: React.FC<Props> = ({ assessments, onRefresh }) => {
 
   function stopCamera() {
     if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
+    if (inferenceIntervalRef.current !== null) window.clearInterval(inferenceIntervalRef.current);
     intervalRef.current = null;
+    inferenceIntervalRef.current = null;
     streamRef.current?.getTracks().forEach(track => track.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -197,8 +200,12 @@ export const YomaMovement: React.FC<Props> = ({ assessments, onRefresh }) => {
           window.clearInterval(intervalRef.current); intervalRef.current = null;
         }
       }, 250);
-      const inferenceTimer = window.setInterval(() => {
-        if (Date.now() - startMsRef.current >= 300000) { window.clearInterval(inferenceTimer); return; }
+      inferenceIntervalRef.current = window.setInterval(() => {
+        if (Date.now() - startMsRef.current >= 300000) {
+          if (inferenceIntervalRef.current !== null) window.clearInterval(inferenceIntervalRef.current);
+          inferenceIntervalRef.current = null;
+          return;
+        }
         void inferFrame();
       }, 500);
     } catch (error: any) {
