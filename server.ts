@@ -675,6 +675,79 @@ app.post('/api/sensors/ingest', (req: Request, res: Response) => {
 });
 
 // ============================================================
+// NASA OSDR PUBLIC DATA API (research discovery; not live telemetry)
+// ============================================================
+
+const OSDR_API = 'https://osdr.nasa.gov/osdr/data';
+
+app.get('/api/osdr/search', async (req: Request, res: Response) => {
+  const term = String(req.query.term || '').trim().slice(0, 120);
+  if (!term) {
+    res.status(400).json({ error: 'A search term is required' });
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ term, from: '0', size: '10', type: 'cgene' });
+    const response = await fetch(`${OSDR_API}/search?${params.toString()}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'ASTRAMED/1.0 NASA-OSDR-research-explorer' },
+      signal: AbortSignal.timeout(20000)
+    });
+    if (!response.ok) {
+      res.status(502).json({ error: `NASA OSDR search returned HTTP ${response.status}` });
+      return;
+    }
+    res.json(await response.json());
+  } catch (error) {
+    console.error('NASA OSDR search failed:', error);
+    res.status(502).json({ error: 'Could not reach NASA OSDR. Try again later.' });
+  }
+});
+
+app.get('/api/osdr/studies/:accession/files', async (req: Request, res: Response) => {
+  const accession = String(req.params.accession || '');
+  if (!/^\\d+(?:\\.\\d+)?$/.test(accession)) {
+    res.status(400).json({ error: 'Invalid NASA OSDR accession' });
+    return;
+  }
+  try {
+    const response = await fetch(`${OSDR_API}/osd/files/${encodeURIComponent(accession)}?page=0&size=25&all_files=false`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'ASTRAMED/1.0 NASA-OSDR-research-explorer' },
+      signal: AbortSignal.timeout(20000)
+    });
+    if (!response.ok) {
+      res.status(502).json({ error: `NASA OSDR file catalog returned HTTP ${response.status}` });
+      return;
+    }
+    res.json(await response.json());
+  } catch (error) {
+    console.error('NASA OSDR file catalog failed:', error);
+    res.status(502).json({ error: 'Could not retrieve NASA OSDR files. Try again later.' });
+  }
+});
+
+app.get('/api/osdr/studies/:accession/metadata', async (req: Request, res: Response) => {
+  const accession = String(req.params.accession || '');
+  if (!/^\\d+(?:\\.\\d+)?$/.test(accession)) {
+    res.status(400).json({ error: 'Invalid NASA OSDR accession' });
+    return;
+  }
+  try {
+    const response = await fetch(`${OSDR_API}/osd/meta/${encodeURIComponent(accession)}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'ASTRAMED/1.0 NASA-OSDR-research-explorer' },
+      signal: AbortSignal.timeout(20000)
+    });
+    if (!response.ok) {
+      res.status(502).json({ error: `NASA OSDR metadata returned HTTP ${response.status}` });
+      return;
+    }
+    res.json(await response.json());
+  } catch (error) {
+    console.error('NASA OSDR metadata failed:', error);
+    res.status(502).json({ error: 'Could not retrieve NASA OSDR metadata. Try again later.' });
+  }
+});
+
+// ============================================================
 // DATA IMPORT
 // ============================================================
 
