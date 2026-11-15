@@ -397,7 +397,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
       </div>
 
       <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2"><div><h2 className="text-sm font-bold text-white font-mono">30-DAY MOBILITY TIMELINE</h2><p className="text-[11px] text-slate-400">Only quality-accepted, non-simulated camera assessments for this subject appear in comparisons.</p></div><span className="text-xs font-mono text-cyan-300">{chronological.length} accepted • {rejected.length} rejected</span></div>
+        <div className="flex items-center justify-between flex-wrap gap-2"><div><h2 className="text-sm font-bold text-white font-mono">30-DAY MOBILITY TIMELINE</h2><p className="text-[11px] text-slate-400">Only quality-accepted, non-simulated camera assessments for this subject appear in comparisons. Suggested cadence: Day 1 baseline, then Days 7, 14, 21 and 30.</p></div><span className="text-xs font-mono text-cyan-300">{chronological.length} accepted • {rejected.length} rejected</span></div>
         {chronological.length === 0 ? (
           <div className="py-8 text-center border border-dashed border-slate-700 rounded-lg"><Clock3 className="w-7 h-7 text-slate-500 mx-auto mb-2" /><p className="text-sm text-slate-300">No accepted YOMA assessments yet</p><p className="text-xs text-slate-500 mt-1">Complete a five-minute camera test to establish the first baseline.</p></div>
         ) : (
@@ -411,7 +411,10 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
               })}
             </div>
             <div className="space-y-2">
-              {chronological.map((item, index) => <div key={item.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs"><span className="text-cyan-300 font-mono">TEST {index + 1}</span><span className="text-slate-300">{new Date(item.completedAt).toLocaleString()}</span><span className="text-slate-500">{item.subjectId}</span><span className="ml-auto text-emerald-400">{item.quality.validFrames} valid frames • {(item.quality.meanConfidence * 100).toFixed(0)}% confidence</span></div>)}
+              {chronological.map((item, index) => {
+                const dayNumber = Math.max(1, Math.floor((new Date(item.completedAt).getTime() - new Date(first!.completedAt).getTime()) / 86400000) + 1);
+                return <div key={item.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs"><span className="text-cyan-300 font-mono">DAY {dayNumber} • TEST {index + 1}</span><span className="text-slate-300">{new Date(item.completedAt).toLocaleString()}</span><span className="text-slate-500">{item.subjectId}</span><span className="ml-auto text-emerald-400">{item.quality.validFrames} valid frames • {(item.quality.meanConfidence * 100).toFixed(0)}% confidence</span></div>;
+              })}
             </div>
           </>
         )}
