@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Activity, Bluetooth, ChevronRight, ShieldCheck, Watch, Volume2, VolumeX, Sparkles } from 'lucide-react';
 
@@ -16,9 +16,43 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
   const [visibleWords, setVisibleWords] = useState(0);
   const [voiceState, setVoiceState] = useState<'speaking' | 'ready' | 'unavailable'>('ready');
   const [speechFinished, setSpeechFinished] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const words = GREETING.split(' ');
 
+  const unlockAudio = useCallback(() => {
+    if (typeof window === 'undefined' || !('AudioContext' in window)) return;
+    try {
+      if (!audioContextRef.current) audioContextRef.current = new AudioContext();
+      if (audioContextRef.current.state === 'suspended') void audioContextRef.current.resume();
+    } catch {
+      // Browser audio may be unavailable; the visual typewriter still works.
+    }
+  }, []);
+
+  const playTypewriterTick = useCallback(() => {
+    const context = audioContextRef.current;
+    if (!context || context.state !== 'running') return;
+    try {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const now = context.currentTime;
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(920, now);
+      oscillator.frequency.exponentialRampToValueAtTime(560, now + 0.025);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.014, now + 0.003);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.032);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(now);
+      oscillator.stop(now + 0.034);
+    } catch {
+      // Sound effects are optional and must never block the intro.
+    }
+  }, []);
+
   const speakGreeting = useCallback(() => {
+    unlockAudio();
     if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
       setVoiceState('unavailable');
       setSpeechFinished(true);
@@ -39,7 +73,7 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
     utterance.onend = () => { setVoiceState('ready'); setSpeechFinished(true); };
     utterance.onerror = () => { setVoiceState('unavailable'); setSpeechFinished(true); };
     window.speechSynthesis.speak(utterance);
-  }, []);
+  }, [unlockAudio]);
 
   useEffect(() => {
     speakGreeting();
@@ -51,7 +85,7 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
         }
         return current + 1;
       });
-    }, reduceMotion ? 1 : 235);
+    }, reduceMotion ? 1 : 105);
     const fallback = window.setTimeout(() => setIntroComplete(true), reduceMotion ? 900 : 11000);
     return () => {
       window.clearInterval(interval);
@@ -59,6 +93,10 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     };
   }, [reduceMotion, speakGreeting, words.length]);
+
+  useEffect(() => {
+    if (visibleWords > 0) playTypewriterTick();
+  }, [visibleWords, playTypewriterTick]);
 
   useEffect(() => {
     if (visibleWords >= words.length && speechFinished) {
@@ -69,10 +107,10 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
 
   const reveal = (delay: number) => reduceMotion
     ? { initial: false, animate: { opacity: 1 } }
-    : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] as const } };
+    : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.24, delay, ease: [0.22, 1, 0.36, 1] as const } };
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-[#030914] text-white">
+    <div onPointerDownCapture={unlockAudio} onKeyDownCapture={unlockAudio} className="fixed inset-0 z-[100] overflow-y-auto bg-[#030914] text-white">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,rgba(8,145,178,0.17),transparent_55%),radial-gradient(ellipse_at_10%_90%,rgba(30,64,175,0.12),transparent_45%)]" />
         <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(56,189,248,0.22)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.22)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
@@ -108,7 +146,7 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
             </div>
           </motion.div>
         ) : (
-          <motion.div key="mission-options" initial={{ opacity: 0, y: 18, filter: 'blur(5px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="relative mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col items-center justify-center px-5 py-10 sm:px-8">
+          <motion.div key="mission-options" initial={{ opacity: 0, y: 18, filter: 'blur(5px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }} className="relative mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col items-center justify-center px-5 py-10 sm:px-8">
             <motion.div {...reveal(0.05)} className="mb-7 flex items-center gap-2 rounded-full border border-cyan-300/20 bg-slate-900/60 px-4 py-2 font-mono text-[10px] tracking-[0.24em] text-cyan-200 shadow-[0_0_30px_rgba(8,145,178,0.1)]">
               <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-300" /></span>
               MISSION SYSTEMS · INITIALIZATION
