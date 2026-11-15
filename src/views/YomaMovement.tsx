@@ -42,16 +42,12 @@ interface Props {
   assessments: MovementAssessment[];
   crewList: CrewMember[];
   onRefresh: () => Promise<void> | void;
-  externalCameraStream?: MediaStream | null;
-  onPhoneSpeak?: (text: string) => boolean;
 }
 
-export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh, externalCameraStream, onPhoneSpeak }) => {
+export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const externalStreamRef = useRef<MediaStream | null>(externalCameraStream || null);
-  externalStreamRef.current = externalCameraStream || null;
   const modelRef = useRef<any>(null);
   const startMsRef = useRef<number>(0);
   const startedAtRef = useRef<string>('');
@@ -80,7 +76,6 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
 
   function speakInstruction(text: string) {
     if (!voiceEnabled) return;
-    if (onPhoneSpeak?.(text)) return;
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -217,17 +212,15 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
     if (!subjectId.trim()) { setStatus('error'); setMessage('Enter an anonymous subject ID before starting.'); return; }
     setStatus('loading'); setMessage('Requesting camera permission and loading the YOLO26 nano pose model. The model downloads once and is cached by your browser.');
     try {
-      const stream = externalStreamRef.current || await navigator.mediaDevices.getUserMedia({ video: {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: {
         ...(selectedCameraId ? { deviceId: { exact: selectedCameraId } } : { facingMode: 'user' }),
         width: { ideal: 640 }, height: { ideal: 480 }
       }, audio: false });
       streamRef.current = stream;
       const activeCameraId = stream.getVideoTracks()[0]?.getSettings().deviceId || '';
       if (activeCameraId) setSelectedCameraId(activeCameraId);
-      if (!externalStreamRef.current) {
-        const availableCameras = await navigator.mediaDevices.enumerateDevices();
-        setCameraDevices(availableCameras.filter(device => device.kind === 'videoinput'));
-      }
+      const availableCameras = await navigator.mediaDevices.enumerateDevices();
+      setCameraDevices(availableCameras.filter(device => device.kind === 'videoinput'));
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
@@ -243,9 +236,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
       startMsRef.current = Date.now();
       startedAtRef.current = new Date().toISOString();
       setElapsed(0); setLastSaved(null); setLiveConfidence(0);
-      setStatus('running'); setMessage(externalStreamRef.current
-        ? 'YOMA is processing the paired phone camera stream locally in this browser. Video is peer-to-peer and is not uploaded to the ASTRAMED server.'
-        : 'YOMA is processing camera frames locally in this browser. Video is not uploaded to the ASTRAMED server.');
+      setStatus('running'); setMessage('YOMA is processing camera frames locally in this browser. Video is not uploaded to the ASTRAMED server.');
       intervalRef.current = window.setInterval(() => {
         const seconds = Math.min(300, Math.floor((Date.now() - startMsRef.current) / 1000));
         setElapsed(seconds);
@@ -290,7 +281,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
       durationSeconds: Math.floor((Date.now() - startMsRef.current) / 1000),
       modelName: MODEL_NAME,
       modelVersion: MODEL_VERSION,
-      cameraLabel: streamRef.current?.getVideoTracks()[0]?.label || (streamRef.current === externalStreamRef.current ? 'Paired phone camera (WebRTC)' : 'Browser camera'),
+      cameraLabel: streamRef.current?.getVideoTracks()[0]?.label || 'Browser camera',
       source: 'camera_yolo_pose',
       simulated: false,
       measurements,
@@ -342,7 +333,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
       <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
         <div className="flex items-center gap-2 text-xs font-mono text-cyan-400"><Activity className="w-4 h-4" /> YOMA • CAMERA-BASED MOBILITY ASSESSMENT</div>
         <h1 className="text-xl font-bold text-white mt-1">Five-minute movement test</h1>
-        <p className="text-xs text-slate-400 mt-1">YOLO26 nano pose estimation runs in this browser. Choose the computer camera or connect a phone companion below; paired phone video is received over WebRTC and processed locally, not uploaded to the server.</p>
+        <p className="text-xs text-slate-400 mt-1">YOLO26 nano pose estimation runs in this browser using the computer's selected camera. Video is processed locally and is not uploaded to the server.</p>
         <div className="mt-3 p-3 rounded-lg border border-amber-800/70 bg-amber-950/30 text-[11px] text-amber-200">
           Model licence: the browser inference package and YOLO weights are published under AGPL-3.0; check licensing before any closed-source or commercial distribution. Prototype limitation: the pretrained model uses ordinary human COCO poses. It has not been validated for spacesuits, microgravity, restraint systems, occlusion or clinical range-of-motion measurement. This is a ground-prototype assessment only.
         </div>
@@ -366,15 +357,15 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
             }} className={voiceEnabled ? "px-3 py-2 rounded-lg bg-cyan-900/60 border border-cyan-700 text-cyan-200 text-xs" : "px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs"}>
               {voiceEnabled ? 'Voice instructions: ON' : 'Enable voice instructions'}
             </button>
-            <span className="text-[10px] text-slate-500">Uses the paired phone speaker when connected; otherwise this device's browser speech output.</span>
+            <span className="text-[10px] text-slate-500">Voice instructions use this device browser speech output.</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-[10px] text-slate-400 font-mono">CAMERA INPUT</label>
             <select value={selectedCameraId} onChange={event => setSelectedCameraId(event.target.value)} disabled={status === 'running' || status === 'loading' || status === 'saving'} className="min-w-0 flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-200">
-              <option value="">{externalCameraStream ? 'Paired phone camera' : 'Default browser camera'}</option>
-              {!externalCameraStream && cameraDevices.map((device, index) => <option key={device.deviceId || index} value={device.deviceId}>{device.label || `Camera ${index + 1}`}</option>)}
+              <option value="">Default browser camera</option>
+              {cameraDevices.map((device, index) => <option key={device.deviceId || index} value={device.deviceId}>{device.label || `Camera ${index + 1}`}</option>)}
             </select>
-            <span className="text-[10px] text-slate-500">{externalCameraStream ? 'Paired phone camera connected' : `${cameraDevices.length} camera(s) detected`}</span>
+            <span className="text-[10px] text-slate-500">{cameraDevices.length} camera(s) detected</span>
           </div>
           <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
             <video ref={videoRef} muted playsInline className="absolute inset-0 w-full h-full object-contain" />
