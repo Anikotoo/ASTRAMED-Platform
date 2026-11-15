@@ -31,6 +31,7 @@ import { CrewProfiles } from './views/CrewProfiles';
 import { VirtualSmartwatch } from './views/VirtualSmartwatch';
 import { WearableStartGate } from './components/WearableStartGate';
 import { MrsSpaceGuide } from './components/MrsSpaceGuide';
+import { DEMO_ALERTS, DEMO_CREW, DEMO_EVENTS, DEMO_READINGS } from './utils/demoData';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<NavSection>('overview');
@@ -46,6 +47,17 @@ export default function App() {
   const [sensorIngestConfigured, setSensorIngestConfigured] = useState<boolean>(false);
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
   const [showWearableStartGate, setShowWearableStartGate] = useState<boolean>(true);
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
+  const [selectedDemoCrewId, setSelectedDemoCrewId] = useState<string>(DEMO_CREW[0].id);
+
+  const displayCrewList = isDemoMode ? DEMO_CREW : crewList;
+  const displayReadings = isDemoMode ? DEMO_READINGS : readings;
+  const displayAlerts = isDemoMode ? DEMO_ALERTS : alerts;
+  const displayEvents = isDemoMode ? DEMO_EVENTS : events;
+  const displaySelectedCrew = isDemoMode ? (DEMO_CREW.find(crew => crew.id === selectedDemoCrewId) || DEMO_CREW[0]) : selectedCrew;
+  const demoAllowedSections: NavSection[] = ['overview', 'crew_body', 'trends', 'ai_assistant', 'research'];
+  const navigateSection = (section: NavSection) => { if (isDemoMode && !demoAllowedSections.includes(section)) return; setActiveSection(section); };
+  const toggleDemoMode = () => { setIsDemoMode(current => !current); setActiveSection('overview'); setSelectedDemoCrewId(DEMO_CREW[0].id); setIsAlertsOpen(false); setIsComparisonOpen(false); setIsReportOpen(false); };
 
   // Modals state
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
@@ -196,14 +208,14 @@ export default function App() {
         smartwatch: 'smartwatch'
       };
       if (sectionMap[action.targetSection]) {
-        setActiveSection(sectionMap[action.targetSection]);
+        navigateSection(sectionMap[action.targetSection]);
       }
     }
 
     if (action.params?.crewId) {
-      const target = crewList.find(c => c.id === action.params?.crewId);
+      const target = displayCrewList.find(c => c.id === action.params?.crewId);
       if (target) {
-        setSelectedCrew(target);
+        if (isDemoMode) setSelectedDemoCrewId(target.id); else setSelectedCrew(target);
       }
     }
 
@@ -215,14 +227,14 @@ export default function App() {
   // Navigate to Research from Body Map
   const handleOpenResearchFromModel = (category: string) => {
     setResearchCategoryFilter(category);
-    setActiveSection('research');
+    navigateSection('research');
   };
 
   // Navigate to AI Assistant with initial prompt
   const handleAskAIFromStudy = (prompt: string, study?: ResearchStudy) => {
     setAiSelectedStudy(study || null);
     setAiInitialPrompt(prompt);
-    setActiveSection('ai_assistant');
+    navigateSection('ai_assistant');
   };
 
   return (
@@ -239,7 +251,7 @@ export default function App() {
       <Sidebar
         activeSection={activeSection}
         onNavigate={section => {
-          setActiveSection(section);
+          navigateSection(section);
           setIsMobileNavOpen(false);
         }}
         alertCount={alerts.length}
@@ -250,16 +262,16 @@ export default function App() {
       {/* Main Workspace Column */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Friendly onboarding guide sits above the mission controls. */}
-        <MrsSpaceGuide activeSection={activeSection} onNavigate={section => setActiveSection(section)} />
+        <MrsSpaceGuide activeSection={activeSection} onNavigate={section => navigateSection(section)} />
 
         {/* Top Mission Status Bar */}
         <TopStatusBar
-          missionName={settings.missionName}
+          missionName={isDemoMode ? 'ASTRAMED DEMO MISSION' : settings.missionName}
           missionStartDate={settings.missionStartDate}
-          crewList={crewList}
-          selectedCrew={selectedCrew}
-          onSelectCrew={crew => setSelectedCrew(crew)}
-          alerts={alerts}
+          crewList={displayCrewList}
+          selectedCrew={displaySelectedCrew}
+          onSelectCrew={crew => isDemoMode ? setSelectedDemoCrewId(crew.id) : setSelectedCrew(crew)}
+          alerts={displayAlerts}
           isGeminiActive={isGeminiActive}
           onOpenAlerts={() => setIsAlertsOpen(true)}
           onOpenComparison={() => setIsComparisonOpen(true)}
@@ -271,6 +283,7 @@ export default function App() {
           onOpenDevices={() => setActiveSection('smartwatch')}
         />
 
+        {isDemoMode && <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-700/60 bg-amber-950/70 px-4 py-2.5 text-xs"><div className="flex items-center gap-2 text-amber-100"><span className="rounded bg-amber-500 px-2 py-1 text-[10px] font-black tracking-wider text-slate-950">DEMO MODE</span><span className="font-semibold">SIMULATED DATA — NOT LIVE SENSOR TELEMETRY</span><span className="hidden sm:inline text-amber-200/70">Fictional crew and readings. Nothing is saved to the mission database.</span></div><button onClick={toggleDemoMode} className="rounded-lg border border-amber-500/50 bg-slate-950/70 px-3 py-1.5 font-semibold text-amber-100 hover:bg-amber-900/60">Exit Demo Mode</button></div>}
         {/* View Content Area */}
         <main className="astramed-workspace flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 lg:p-6 pb-24 md:pb-6 min-h-0 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/60">
           {isLoadingInitial ? (
@@ -290,23 +303,23 @@ export default function App() {
               >
               {activeSection === 'overview' && (
                 <MissionOverview
-                  crewList={crewList}
-                  readings={readings}
-                  alerts={alerts}
-                  events={events}
-                  selectedCrew={selectedCrew}
-                  onSelectCrew={crew => setSelectedCrew(crew)}
-                  onNavigate={sec => setActiveSection(sec)}
+                  crewList={displayCrewList}
+                  readings={displayReadings}
+                  alerts={displayAlerts}
+                  events={displayEvents}
+                  selectedCrew={displaySelectedCrew}
+                  onSelectCrew={crew => isDemoMode ? setSelectedDemoCrewId(crew.id) : setSelectedCrew(crew)}
+                  onNavigate={sec => navigateSection(sec)}
                   onOpenAlerts={() => setIsAlertsOpen(true)}
                 />
               )}
 
               {activeSection === 'crew_body' && (
                 <CrewBodyMonitor
-                  crewList={crewList}
-                  selectedCrew={selectedCrew}
-                  onSelectCrew={crew => setSelectedCrew(crew)}
-                  readings={readings}
+                  crewList={displayCrewList}
+                  selectedCrew={displaySelectedCrew}
+                  onSelectCrew={crew => isDemoMode ? setSelectedDemoCrewId(crew.id) : setSelectedCrew(crew)}
+                  readings={displayReadings}
                   onOpenResearch={handleOpenResearchFromModel}
                 />
               )}
@@ -323,9 +336,9 @@ export default function App() {
               {activeSection === 'ai_assistant' && (
                 <AIAssistant
                   activeSection={activeSection}
-                  selectedCrew={selectedCrew}
-                  readings={readings}
-                  alerts={alerts}
+                  selectedCrew={displaySelectedCrew}
+                  readings={displayReadings}
+                  alerts={displayAlerts}
                   isGeminiActive={isGeminiActive}
                   onExecuteAction={handleExecuteAction}
                   initialPrompt={aiInitialPrompt}
@@ -403,16 +416,16 @@ export default function App() {
       {/* Auxiliary Modals */}
       {isAlertsOpen && (
         <AlertsCenterModal
-          alerts={alerts}
-          crewList={crewList}
+          alerts={displayAlerts}
+          crewList={displayCrewList}
           onClose={() => setIsAlertsOpen(false)}
         />
       )}
 
       {isComparisonOpen && (
         <CrewComparisonModal
-          crewList={crewList}
-          readings={readings}
+          crewList={displayCrewList}
+          readings={displayReadings}
           onClose={() => setIsComparisonOpen(false)}
         />
       )}
@@ -425,10 +438,10 @@ export default function App() {
 
       {isReportOpen && (
         <MissionReportModal
-          selectedCrew={selectedCrew}
-          readings={readings}
-          alerts={alerts}
-          missionName={settings.missionName}
+          selectedCrew={displaySelectedCrew}
+          readings={displayReadings}
+          alerts={displayAlerts}
+          missionName={isDemoMode ? 'ASTRAMED DEMO MISSION' : settings.missionName}
           onClose={() => setIsReportOpen(false)}
         />
       )}
