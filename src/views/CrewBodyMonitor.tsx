@@ -107,19 +107,19 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
                 </div>
               </div>
               <div className="text-right text-[11px] font-mono text-slate-400">
-                <div>Age: <strong className="text-white">{activeCrew?.age}</strong></div>
-                <div>Blood: <strong className="text-white">{activeCrew?.bloodType}</strong></div>
+                <div>Age: <strong className="text-white">{activeCrew?.age ?? 'Not supplied'}</strong></div>
+                <div>Blood: <strong className="text-white">{activeCrew?.bloodType ?? 'Not supplied'}</strong></div>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-800 text-xs font-mono text-center">
               <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
                 <span className="text-[10px] text-slate-400">Orbit Time</span>
-                <div className="font-bold text-slate-200">{activeCrew?.daysInOrbit} Days</div>
+                <div className="font-bold text-slate-200">{activeCrew?.daysInOrbit ?? 'Not supplied'} Days</div>
               </div>
               <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
                 <span className="text-[10px] text-slate-400">EVAs Logged</span>
-                <div className="font-bold text-cyan-300">{activeCrew?.evaCount} Spacewalks</div>
+                <div className="font-bold text-cyan-300">{activeCrew?.evaCount ?? 'Not supplied'} Spacewalks</div>
               </div>
               <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
                 <span className="text-[10px] text-slate-400">VO2 Max</span>
@@ -137,7 +137,7 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
                   <Heart className="w-3.5 h-3.5 text-rose-400" />
                   CARDIOVASCULAR TELEMETRY
                 </span>
-                <span className="text-[10px] text-slate-400">Sensor Stream</span>
+                <span className="text-[10px] text-slate-400">Recorded readings</span>
               </div>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
