@@ -199,12 +199,12 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
                   </div>
                   {!vitals.hasData ? (
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">NO DATA</span>
-                  ) : vitals.hasUnverifiedData ? (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-300 border border-amber-800">UNVERIFIED DATA</span>
                   ) : vitals.hasAlert ? (
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-400 border border-amber-800">
                       ALERT
                     </span>
+                  ) : vitals.hasUnverifiedData ? (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-300 border border-amber-800">UNVERIFIED DATA</span>
                   ) : (
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">
                       NO ALERT
