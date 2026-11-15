@@ -197,30 +197,45 @@ function getCrewById(db: AstramedDatabase, crewId?: string) {
   return db.crew.find((member: any) => member.id === crewId);
 }
 
+function findExplicitCrewFromMessage(db: AstramedDatabase, message: string) {
+  const text = normalize(message);
+  return db.crew.find((member: any) => {
+    const name = normalize(member.name);
+    const callsign = normalize(member.callsign);
+    return (name.length > 1 && text.includes(name)) ||
+      (callsign.length > 1 && text.includes(callsign));
+  });
+}
+
 function findCrewFromMessage(
   db: AstramedDatabase,
   message: string,
-  activeCrewId?: string
+  activeCrewId?: string,
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = []
 ) {
+  // Explicit names and ordinal references in the newest message take priority.
+  const explicit = findExplicitCrewFromMessage(db, message);
+  if (explicit) return explicit;
+
   const text = normalize(message);
+  const ordinalMatch = text.match(/\\b(first|1st|second|2nd|third|3rd|fourth|4th|fifth|5th)\\s+(?:astronaut|crew(?: member)?)\\b|\\b(?:astronaut|crew(?: member)?)\\s*(?:number|#)?\\s*(1|2|3|4|5)\\b/);
+  if (ordinalMatch) {
+    const word = ordinalMatch[1];
+    const number = ordinalMatch[2] ? Number(ordinalMatch[2]) :
+      ({ first: 1, '1st': 1, second: 2, '2nd': 2, third: 3, '3rd': 3, fourth: 4, '4th': 4, fifth: 5, '5th': 5 } as Record<string, number>)[word] || 0;
+    if (number > 0 && db.crew[number - 1]) return db.crew[number - 1];
+  }
 
-  // Prefer an explicitly named crew member in the user's question.
-  const namedCrew = db.crew.find((member: any) => {
-    const name = normalize(member.name);
-    const callsign = normalize(member.callsign);
+  // Pronoun/short follow-ups inherit the most recently named crew member
+  // from user messages, never from an assistant-generated guess.
+  for (let index = conversationHistory.length - 1; index >= 0; index -= 1) {
+    const item = conversationHistory[index];
+    if (item.role !== 'user') continue;
+    const previousCrew = findExplicitCrewFromMessage(db, item.content);
+    if (previousCrew) return previousCrew;
+  }
 
-    return (
-      (name.length > 1 && text.includes(name)) ||
-      (callsign.length > 1 && text.includes(callsign))
-    );
-  });
-
-  if (namedCrew) return namedCrew;
-
-  return (
-    getCrewById(db, activeCrewId) ||
-    db.crew[0]
-  );
+  return getCrewById(db, activeCrewId) || db.crew[0];
 }
 
 const PARAMETER_ALIASES: Record<string, string[]> = {
@@ -1316,11 +1331,13 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
     }
 
     const db = readDb();
+    const history = sanitizeConversationHistory(conversationHistory);
 
     const crewMember = findCrewFromMessage(
       db,
       message,
-      activeCrewId
+      activeCrewId,
+      history
     );
 
     const readings = getCrewReadings(
@@ -1335,7 +1352,6 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
     );
 
     const study = getStudyContext(selectedStudy);
-    const history = sanitizeConversationHistory(conversationHistory);
     const crewDatasets = db.importedDatasets.filter(dataset => !crewMember || dataset.crewIdsAffected?.includes(crewMember.id));
     const crewEvents = newestFirst(db.events.filter(event => !crewMember || event.crewId === crewMember.id)).slice(0, 12);
     const sourceRegister: Array<{ id: string; title: string; source: string; doi?: string; url?: string }> = [];
