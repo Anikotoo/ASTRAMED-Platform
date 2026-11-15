@@ -122,7 +122,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({
               Astronaut Health Data Importer
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              Ingest biometric datasets with strict physiological validation, error checking, and persistent server storage.
+              Import user-provided records with format and range checks. Uploaded values remain unverified until independently reviewed.
             </p>
           </div>
 
