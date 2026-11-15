@@ -1,5 +1,6 @@
 import React from 'react';
 import { CrewMember, HealthReading, HealthAlert } from '../types/astramed';
+import { CHALLENGE_RESOURCES } from '../components/ChallengeResourcesPanel';
 import { FileText, X, Printer, Download, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface MissionReportModalProps {
@@ -151,8 +152,15 @@ export const MissionReportModal: React.FC<MissionReportModalProps> = ({
             <h3 className="font-mono text-xs font-bold uppercase text-cyan-400 border-b border-slate-800 pb-1">
               4. Verified Scientific Evidence
             </h3>
-            <div className="space-y-1.5 text-[11px] font-mono text-slate-400 bg-slate-950 p-3 rounded-lg border border-slate-800">
-              No study-specific source records are attached to this report. Add verified NASA OSDR or Europe PMC records through the Research Library before citing research here.
+            <div className="space-y-2 text-[11px] text-slate-400 bg-slate-950 p-3 rounded-lg border border-slate-800">
+              <p>Challenge-provided NASA and CSA resources are available as scientific background. They are not crew measurements and do not establish a diagnosis.</p>
+              {CHALLENGE_RESOURCES.map(resource => (
+                <div key={resource.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span><strong className="text-slate-200">{resource.agency}:</strong> {resource.title}</span>
+                  <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Open source</a>
+                </div>
+              ))}
+              <p className="pt-1 text-[10px]">No study-specific source records are attached to this report. Link to the original source and follow its data-use terms before reusing external content.</p>
             </div>
           </div>
 
