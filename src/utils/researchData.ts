@@ -73,7 +73,8 @@ function mapOsdrRecord(record: Record<string, unknown>, index: number): Research
   const authorText = cleanText(readField(record, ['Study Publication Author List', 'authors', 'author']), 1000);
   const authors = authorText ? authorText.split(/,|;/).map(item => item.trim()).filter(Boolean) : [];
   const yearRaw = readField(record, ['Study Publication Date', 'publication_date', 'pubYear', 'year', 'Study Public Release Date']);
-  let year = Number(cleanText(yearRaw).slice(0, 4)) || 0;
+  const yearText = cleanText(yearRaw);
+  let year = /^\\d{4}/.test(yearText) ? Number(yearText.slice(0, 4)) : 0;
   if (!year && Number.isFinite(Number(yearRaw)) && Number(yearRaw) > 1000000000) year = new Date(Number(yearRaw) * 1000).getUTCFullYear();
   const journal = cleanText(readField(record, ['Study Publication Title', 'journal', 'publication']), 500) || 'NASA Open Science Data Repository';
   const lower = `${title} ${abstract}`.toLowerCase();
