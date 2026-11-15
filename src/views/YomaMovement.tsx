@@ -68,6 +68,8 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
   const [cameraDevices, setCameraDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState('');
   const [liveConfidence, setLiveConfidence] = useState(0);
+  const [poseState, setPoseState] = useState<'waiting' | 'detected' | 'lost' | 'error'>('waiting');
+  const [liveFrameStats, setLiveFrameStats] = useState({ valid: 0, rejected: 0, latencyMs: 0 });
   const [liveAngles, setLiveAngles] = useState({ shoulder: null as number | null, elbow: null as number | null, knee: null as number | null });
   const [lastSaved, setLastSaved] = useState<MovementAssessment | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
@@ -152,29 +154,48 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
     if (!video || !model || video.readyState < 2 || processingRef.current) return;
     processingRef.current = true;
     try {
+      const inferenceStarted = performance.now();
       const result: any = await model.predict(video, { conf: 0.25, iou: 0.7 });
-      const raw: Point[] | undefined = result?.keypoints?.[0]?.points;
-      if (!raw || raw.length < 17) {
-        rejectedFramesRef.current += 1;
-        setLiveConfidence(0);
-        return;
-      }
-      const points = raw.map(point => [Number(point[0]), Number(point[1]), Number(point[2])] as Point);
+      const inferenceLatency = Math.round(performance.now() - inferenceStarted);
+      const candidates: Point[][] = Array.isArray(result?.keypoints)
+        ? result.keypoints.map((person: any) => person?.points)
+            .filter((person: any) => Array.isArray(person) && person.length >= 17)
+            .map((person: any[]) => person.map(point => [Number(point[0]), Number(point[1]), Number(point[2])] as Point))
+        : [];
       const elapsedSeconds = Math.min(300, Math.floor((Date.now() - startMsRef.current) / 1000));
       const phase = PHASES.find(item => elapsedSeconds >= item.start && elapsedSeconds < item.end)?.name || 'Quality review';
       const relevant = phase === 'Shoulder movement' ? [5, 6, 7, 8, 11, 12] :
         phase === 'Elbow movement' ? [5, 6, 7, 8, 9, 10] :
         phase === 'Knee movement' ? [11, 12, 13, 14, 15, 16] : [5, 6, 11, 12];
-      const confidences = relevant.map(index => points[index]?.[2] || 0);
+      const points = candidates
+        .map(person => ({
+          person,
+          confidence: relevant.reduce((sum, index) => sum + (Number.isFinite(person[index]?.[2]) ? person[index][2] : 0), 0) / relevant.length
+        }))
+        .sort((a, b) => b.confidence - a.confidence)[0]?.person;
+      if (!points) {
+        rejectedFramesRef.current += 1;
+        setLiveConfidence(0);
+        setPoseState('lost');
+        setLiveFrameStats({ valid: validFramesRef.current, rejected: rejectedFramesRef.current, latencyMs: inferenceLatency });
+        const canvas = canvasRef.current;
+        if (canvas) canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+      const confidences = relevant.map(index => Number.isFinite(points[index]?.[2]) ? points[index][2] : 0);
       const frameConfidence = confidences.reduce((sum, value) => sum + value, 0) / confidences.length;
       setLiveConfidence(frameConfidence);
       drawPose(points, Number(result.width || video.videoWidth), Number(result.height || video.videoHeight));
 
       if (frameConfidence < 0.55) {
         rejectedFramesRef.current += 1;
+        setPoseState('lost');
+        setLiveFrameStats({ valid: validFramesRef.current, rejected: rejectedFramesRef.current, latencyMs: inferenceLatency });
         return;
       }
+      setPoseState('detected');
       validFramesRef.current += 1;
+      setLiveFrameStats({ valid: validFramesRef.current, rejected: rejectedFramesRef.current, latencyMs: inferenceLatency });
       confidenceRef.current.push(frameConfidence);
       phaseCountsRef.current[phase] = (phaseCountsRef.current[phase] || 0) + 1;
 
@@ -200,6 +221,8 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
     } catch (error) {
       console.error('YOMA pose inference failed:', error);
       rejectedFramesRef.current += 1;
+      setPoseState('error');
+      setLiveFrameStats({ valid: validFramesRef.current, rejected: rejectedFramesRef.current, latencyMs: 0 });
     } finally {
       processingRef.current = false;
     }
@@ -236,6 +259,8 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
       startMsRef.current = Date.now();
       startedAtRef.current = new Date().toISOString();
       setElapsed(0); setLastSaved(null); setLiveConfidence(0);
+      setPoseState('waiting');
+      setLiveFrameStats({ valid: 0, rejected: 0, latencyMs: 0 });
       setStatus('running'); setMessage('YOMA is processing camera frames locally in this browser. Video is not uploaded to the ASTRAMED server.');
       intervalRef.current = window.setInterval(() => {
         const seconds = Math.min(300, Math.floor((Date.now() - startMsRef.current) / 1000));
@@ -316,6 +341,8 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
     lastAnnouncedPhaseRef.current = '';
     completionAnnouncedRef.current = false;
     stopCamera(); setStatus('idle'); setElapsed(0); setMessage(''); setLiveConfidence(0);
+    setPoseState('waiting');
+    setLiveFrameStats({ valid: 0, rejected: 0, latencyMs: 0 });
     setLiveAngles({ shoulder: null, elbow: null, knee: null });
   }
 
@@ -381,6 +408,13 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
             <span className="text-slate-400">Live pose confidence</span>
             <span className={liveConfidence >= 0.55 ? 'text-emerald-400 font-mono' : 'text-amber-400 font-mono'}>{(liveConfidence * 100).toFixed(0)}%</span>
           </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+            <div className="rounded-lg bg-slate-950 border border-slate-800 p-2"><div className="text-slate-500">POSE STATUS</div><div className={poseState === 'detected' ? 'text-emerald-300 font-mono mt-1' : 'text-amber-300 font-mono mt-1'}>{poseState.toUpperCase()}</div></div>
+            <div className="rounded-lg bg-slate-950 border border-slate-800 p-2"><div className="text-slate-500">VALID FRAMES</div><div className="text-white font-mono mt-1">{liveFrameStats.valid}</div></div>
+            <div className="rounded-lg bg-slate-950 border border-slate-800 p-2"><div className="text-slate-500">REJECTED FRAMES</div><div className="text-white font-mono mt-1">{liveFrameStats.rejected}</div></div>
+            <div className="rounded-lg bg-slate-950 border border-slate-800 p-2"><div className="text-slate-500">INFERENCE TIME</div><div className="text-white font-mono mt-1">{liveFrameStats.latencyMs} ms</div></div>
+          </div>
+          <p className="text-[10px] text-slate-500">YOMA selects the clearest detected person in each frame. Low-confidence or missing poses are rejected rather than treated as valid measurements.</p>
           <div className="h-2 rounded-full bg-slate-800 overflow-hidden"><div className="h-full bg-cyan-400 transition-all" style={{ width: `${liveConfidence * 100}%` }} /></div>
           <div className="flex flex-wrap gap-2">
             {status === 'idle' || status === 'error' ? (
