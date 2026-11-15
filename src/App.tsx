@@ -254,7 +254,7 @@ export default function App() {
           navigateSection(section);
           setIsMobileNavOpen(false);
         }}
-        alertCount={alerts.length}
+        alertCount={displayAlerts.length}
         isOpenMobile={isMobileNavOpen}
         onCloseMobile={() => setIsMobileNavOpen(false)}
       />
@@ -278,12 +278,12 @@ export default function App() {
           onOpenReport={() => setIsReportOpen(true)}
           onOpenEnvironment={() => setIsEnvironmentOpen(true)}
           onToggleMobileNav={() => setIsMobileNavOpen(prev => !prev)}
-          onOpenCamera={() => setActiveSection('yoma')}
-          onOpenNeckband={() => setActiveSection('smartwatch')}
-          onOpenDevices={() => setActiveSection('smartwatch')}
+          onOpenCamera={() => navigateSection('yoma')}
+          onOpenNeckband={() => navigateSection('smartwatch')}
+          onOpenDevices={() => navigateSection('smartwatch')}
         />
 
-        {isDemoMode && <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-700/60 bg-amber-950/70 px-4 py-2.5 text-xs"><div className="flex items-center gap-2 text-amber-100"><span className="rounded bg-amber-500 px-2 py-1 text-[10px] font-black tracking-wider text-slate-950">DEMO MODE</span><span className="font-semibold">SIMULATED DATA — NOT LIVE SENSOR TELEMETRY</span><span className="hidden sm:inline text-amber-200/70">Fictional crew and readings. Nothing is saved to the mission database.</span></div><button onClick={toggleDemoMode} className="rounded-lg border border-amber-500/50 bg-slate-950/70 px-3 py-1.5 font-semibold text-amber-100 hover:bg-amber-900/60">Exit Demo Mode</button></div>}
+        <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 py-2 ${isDemoMode ? 'border-amber-700/60 bg-amber-950/70' : 'border-cyan-900/50 bg-slate-900/70'}`}><div className={`flex items-center gap-2 text-xs ${isDemoMode ? 'text-amber-100' : 'text-slate-300'}`}><span className={`rounded px-2 py-1 text-[10px] font-black tracking-wider ${isDemoMode ? 'bg-amber-500 text-slate-950' : 'bg-cyan-950 text-cyan-200 border border-cyan-800'}`}>{isDemoMode ? 'DEMO MODE' : 'MISSION MODE'}</span><span className="font-semibold">{isDemoMode ? 'SIMULATED DATA — NOT LIVE SENSOR TELEMETRY' : 'Live mission workspace'}</span><span className="hidden sm:inline opacity-70">{isDemoMode ? 'Fictional crew and readings. Nothing is saved to the mission database.' : 'Switch to isolated sample data for a safe product demonstration.'}</span></div><button onClick={toggleDemoMode} className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${isDemoMode ? 'border-amber-500/50 bg-slate-950/70 text-amber-100 hover:bg-amber-900/60' : 'border-cyan-700 bg-cyan-950/60 text-cyan-200 hover:bg-cyan-900/60'}`}>{isDemoMode ? 'Exit Demo Mode' : 'Launch Demo Mode'}</button></div>
         {/* View Content Area */}
         <main className="astramed-workspace flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 lg:p-6 pb-24 md:pb-6 min-h-0 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/60">
           {isLoadingInitial ? (
@@ -326,10 +326,10 @@ export default function App() {
 
               {activeSection === 'trends' && (
                 <HealthTrends
-                  crewList={crewList}
-                  selectedCrew={selectedCrew}
-                  onSelectCrew={crew => setSelectedCrew(crew)}
-                  readings={readings}
+                  crewList={displayCrewList}
+                  selectedCrew={displaySelectedCrew}
+                  onSelectCrew={crew => isDemoMode ? setSelectedDemoCrewId(crew.id) : setSelectedCrew(crew)}
+                  readings={displayReadings}
                 />
               )}
 
@@ -353,26 +353,26 @@ export default function App() {
                 />
               )}
 
-              {activeSection === 'importer' && (
+              {activeSection === 'importer' && (isDemoMode ? <div className="rounded-xl border border-amber-800 bg-amber-950/30 p-6 text-sm text-amber-100">Demo Mode is read-only. Exit Demo Mode to import real datasets.</div> : (
                 <DataImporter
                   importedDatasets={importedDatasets}
                   onImportComplete={fetchData}
                   onClearAllImported={handleClearAllImported}
                   onDeleteDataset={handleDeleteDataset}
                 />
-              )}
+              ))}
 
-              {activeSection === 'enter_readings' && (
+              {activeSection === 'enter_readings' && (isDemoMode ? <div className="rounded-xl border border-amber-800 bg-amber-950/30 p-6 text-sm text-amber-100">Demo Mode is read-only. Exit Demo Mode to enter real readings.</div> : (
                 <EnterReadings
                   crewList={crewList}
                   selectedCrew={selectedCrew}
                   onReadingAdded={fetchData}
                 />
-              )}
+              ))}
 
-              {activeSection === 'crew_profiles' && (
+              {activeSection === 'crew_profiles' && (isDemoMode ? <div className="rounded-xl border border-amber-800 bg-amber-950/30 p-6 text-sm text-amber-100">Demo Mode is read-only. Exit Demo Mode to manage real crew profiles.</div> : (
                 <CrewProfiles crewList={crewList} onSaved={fetchData} />
-              )}
+              ))}
 
               {activeSection === 'smartwatch' && <VirtualSmartwatch crewList={crewList} selectedCrew={selectedCrew} />}
 
@@ -382,14 +382,14 @@ export default function App() {
                 </div>
               )}
 
-              {activeSection === 'settings' && (
+              {activeSection === 'settings' && (isDemoMode ? <div className="rounded-xl border border-amber-800 bg-amber-950/30 p-6 text-sm text-amber-100">Mission settings are locked in Demo Mode. Exit Demo Mode to edit settings.</div> : (
                 <SettingsView
                   settings={settings}
                   onUpdateSettings={handleUpdateSettings}
                   isGeminiActive={isGeminiActive}
                   sensorIngestConfigured={sensorIngestConfigured}
                 />
-              )}
+              ))}
               </motion.div>
             </AnimatePresence>
           )}
