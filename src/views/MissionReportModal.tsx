@@ -102,7 +102,7 @@ export const MissionReportModal: React.FC<MissionReportModalProps> = ({
           {/* Section 2: Physiological Telemetry Summary */}
           <div className="space-y-2">
             <h3 className="font-mono text-xs font-bold uppercase text-cyan-400 border-b border-slate-800 pb-1">
-              2. Biomedical Telemetry &amp; Adaptation Summary
+              2. Recorded Health Data Summary
             </h3>
             <div className="space-y-1.5">
               {crewReadings.slice(0, 6).map(r => (
@@ -112,7 +112,7 @@ export const MissionReportModal: React.FC<MissionReportModalProps> = ({
                     <span className="text-cyan-400 font-bold">{r.value} {r.unit}</span>
                   </div>
                   <div className="text-[10px] text-slate-500">
-                    Source: {r.source} • {new Date(r.timestamp).toLocaleDateString()}
+                    Source: {r.source} • Status: {r.status} • {new Date(r.timestamp).toLocaleDateString()}
                   </div>
                 </div>
               ))}
