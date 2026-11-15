@@ -115,7 +115,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
     if (inferenceIntervalRef.current !== null) window.clearInterval(inferenceIntervalRef.current);
     intervalRef.current = null;
     inferenceIntervalRef.current = null;
-    if (streamRef.current && streamRef.current !== externalStreamRef.current) {
+    if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
     }
     streamRef.current = null;
@@ -206,7 +206,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
   }
 
   async function startAssessment() {
-    if (!externalStreamRef.current && !navigator.mediaDevices?.getUserMedia) {
+    if (!navigator.mediaDevices?.getUserMedia) {
       setStatus('error'); setMessage('Camera access is unavailable. Open ASTRAMED over HTTPS or localhost in a supported browser.'); return;
     }
     if (!subjectId.trim()) { setStatus('error'); setMessage('Enter an anonymous subject ID before starting.'); return; }
