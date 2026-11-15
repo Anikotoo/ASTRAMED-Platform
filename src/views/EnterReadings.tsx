@@ -78,7 +78,7 @@ export const EnterReadings: React.FC<EnterReadingsProps> = ({
 
     const cfg = PARAM_CONFIG[parameter];
     if (cfg && (numVal < cfg.min || numVal > cfg.max)) {
-      setValidationError(`Value ${numVal} is outside nominal physiological limits (${cfg.min} - ${cfg.max} ${cfg.defaultUnit}).`);
+      setValidationError(`Value ${numVal} is outside the configured input sanity range (${cfg.min} - ${cfg.max} ${cfg.defaultUnit}).`);
       return;
     }
 
@@ -121,7 +121,7 @@ export const EnterReadings: React.FC<EnterReadingsProps> = ({
       <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
         <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
           <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
-          <span>BIOMEDICAL CONSOLE • MANUAL TELEMETRY LOGGING</span>
+          <span>BIOMEDICAL CONSOLE • MANUAL READING ENTRY</span>
         </div>
         <h1 className="text-xl font-bold text-white tracking-wide mt-1">
           Enter Astronaut Health Reading
