@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CrewMember, HealthCategory, HealthParameter, DataSource, HealthReading } from '../types/astramed';
+import { CrewMember, HealthCategory, HealthParameter, HealthReading } from '../types/astramed';
 import { 
   Edit3, 
   CheckCircle2, 
@@ -30,7 +30,6 @@ export const EnterReadings: React.FC<EnterReadingsProps> = ({
   const [value, setValue] = useState<string>('');
   const [unit, setUnit] = useState<string>('bpm');
   const [timestamp, setTimestamp] = useState<string>(new Date().toISOString().slice(0, 16));
-  const [source, setSource] = useState<DataSource>('manual_entry');
   const [notes, setNotes] = useState<string>('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -92,7 +91,7 @@ export const EnterReadings: React.FC<EnterReadingsProps> = ({
         value: numVal,
         unit,
         timestamp: new Date(timestamp).toISOString(),
-        source,
+        source: 'manual_entry',
         notes: notes.trim() || undefined
       };
 
