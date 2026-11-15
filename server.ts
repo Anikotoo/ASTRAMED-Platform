@@ -436,7 +436,7 @@ async function fetchExternalJson(url: string): Promise<any> {
     headers: { Accept: 'application/json', 'User-Agent': 'ASTRAMED-space-weather-dashboard' },
     signal: AbortSignal.timeout(12000)
   });
-  if (!response.ok) throw new Error(\`Upstream returned HTTP \${response.status}\`);
+  if (!response.ok) throw new Error(`Upstream returned HTTP ${response.status}`);
   return response.json();
 }
 
