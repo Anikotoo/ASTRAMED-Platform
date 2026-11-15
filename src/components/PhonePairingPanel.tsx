@@ -149,7 +149,7 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
     return false;
   }
 
-  function speakOnPhone(text: string) {\n    if (channelRef.current?.readyState === 'open') { channelRef.current.send(JSON.stringify({ type: 'speak', text })); return true; }\n    return false;\n  }\n\n  const companionUrl = pairId ? `${window.location.origin}/phone-companion?pair=${encodeURIComponent(pairId)}` : '';
+  const companionUrl = pairId ? `${window.location.origin}/phone-companion?pair=${encodeURIComponent(pairId)}` : '';
   const qrUrl = companionUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(companionUrl)}`
     : '';
