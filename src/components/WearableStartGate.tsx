@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Activity, Bluetooth, ChevronRight, ShieldCheck, Watch, Volume2, VolumeX, Sparkles } from 'lucide-react';
 
@@ -15,15 +15,17 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
   const [introComplete, setIntroComplete] = useState(false);
   const [visibleWords, setVisibleWords] = useState(0);
   const [voiceState, setVoiceState] = useState<'speaking' | 'ready' | 'unavailable'>('ready');
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const [speechFinished, setSpeechFinished] = useState(false);
   const words = GREETING.split(' ');
 
   const speakGreeting = useCallback(() => {
     if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
       setVoiceState('unavailable');
+      setSpeechFinished(true);
       return;
     }
     window.speechSynthesis.cancel();
+    setSpeechFinished(false);
     const utterance = new SpeechSynthesisUtterance(GREETING);
     utterance.lang = 'en-US';
     utterance.rate = 0.92;
@@ -34,9 +36,8 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
       || voices.find(voice => /en/i.test(voice.lang));
     if (preferredVoice) utterance.voice = preferredVoice;
     utterance.onstart = () => setVoiceState('speaking');
-    utterance.onend = () => setVoiceState('ready');
-    utterance.onerror = () => setVoiceState('unavailable');
-    utteranceRef.current = utterance;
+    utterance.onend = () => { setVoiceState('ready'); setSpeechFinished(true); };
+    utterance.onerror = () => { setVoiceState('unavailable'); setSpeechFinished(true); };
     window.speechSynthesis.speak(utterance);
   }, []);
 
@@ -51,7 +52,7 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
         return current + 1;
       });
     }, reduceMotion ? 1 : 235);
-    const fallback = window.setTimeout(() => setIntroComplete(true), reduceMotion ? 900 : 10500);
+    const fallback = window.setTimeout(() => setIntroComplete(true), reduceMotion ? 900 : 11000);
     return () => {
       window.clearInterval(interval);
       window.clearTimeout(fallback);
@@ -60,11 +61,11 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
   }, [reduceMotion, speakGreeting, words.length]);
 
   useEffect(() => {
-    if (visibleWords >= words.length) {
+    if (visibleWords >= words.length && speechFinished) {
       const delay = window.setTimeout(() => setIntroComplete(true), 650);
       return () => window.clearTimeout(delay);
     }
-  }, [visibleWords, words.length]);
+  }, [visibleWords, words.length, speechFinished]);
 
   const reveal = (delay: number) => reduceMotion
     ? { initial: false, animate: { opacity: 1 } }
