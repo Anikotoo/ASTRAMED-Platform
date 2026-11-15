@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+
+/* ASTRAMED motion system: restrained transitions for integrated GPUs. */
+.astramed-workspace button { transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease, color 180ms ease; }
+.astramed-workspace button:hover:not(:disabled) { transform: translateY(-1px); }
+.astramed-workspace button:active:not(:disabled) { transform: translateY(0) scale(0.985); }
+.astramed-workspace button:focus-visible { outline: 2px solid rgba(34, 211, 238, 0.8); outline-offset: 3px; }
+.overview-reveal { animation: astramed-rise-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.overview-delay-1 { animation-delay: 40ms; } .overview-delay-2 { animation-delay: 100ms; } .overview-delay-3 { animation-delay: 150ms; } .overview-delay-4 { animation-delay: 190ms; } .overview-delay-5 { animation-delay: 230ms; } .overview-delay-6 { animation-delay: 270ms; }
+.overview-stagger > * { animation: astramed-rise-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.overview-stagger > *:nth-child(1) { animation-delay: 40ms; } .overview-stagger > *:nth-child(2) { animation-delay: 90ms; } .overview-stagger > *:nth-child(3) { animation-delay: 140ms; } .overview-stagger > *:nth-child(4) { animation-delay: 190ms; }
+.overview-card { transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease; }
+.overview-card:hover { transform: translateY(-3px); border-color: rgba(34, 211, 238, 0.32); box-shadow: 0 12px 30px rgba(8, 145, 178, 0.09); }
+.overview-card:active { transform: translateY(-1px) scale(0.995); }
+@keyframes astramed-rise-in { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@media (prefers-reduced-motion: reduce) { .astramed-workspace *, .overview-page *, .overview-reveal, .overview-stagger > *, .overview-card { animation: none !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; transform: none !important; } }
