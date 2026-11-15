@@ -29,6 +29,15 @@ const SEED_DB_PATH = path.join(__dirname, 'data', 'astramed-db.json');
 
 
 app.use(express.json({ limit: '10mb' }));
+app.use('/api/phone-pairing', (req: Request, res: Response, next) => {
+  const isLocalDevelopment = ['localhost', '127.0.0.1'].includes(req.hostname);
+  const isHttps = req.secure || req.get('x-forwarded-proto') === 'https';
+  if (!isHttps && !isLocalDevelopment) {
+    res.status(400).json({ error: 'Phone pairing requires HTTPS. Use localhost only for local development.' });
+    return;
+  }
+  next();
+});
 
 // ============================================================
 // TEMPORARY PHONE COMPANION SIGNALING (NO MEDIA STORED ON SERVER)
