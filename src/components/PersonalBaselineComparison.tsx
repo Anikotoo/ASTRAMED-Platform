@@ -43,7 +43,7 @@ export const PersonalBaselineComparison: React.FC<PersonalBaselineComparisonProp
     if (!crew) return null;
 
     const series = readings
-      .filter(reading => reading.crewId === crew.id && reading.parameter === parameter)
+      .filter(reading => reading.crewId === crew.id && reading.parameter === parameter && reading.status !== 'unverified')
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
     if (series.length === 0) return { kind: 'empty' as const };
