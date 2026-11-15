@@ -28,6 +28,8 @@ import { YomaMovement } from './views/YomaMovement';
 import { CrewProfiles } from './views/CrewProfiles';
 import { VirtualSmartwatch } from './views/VirtualSmartwatch';
 import { WearableStartGate } from './components/WearableStartGate';
+import { PhonePairingPanel } from './components/PhonePairingPanel';
+import { PhoneCompanion } from './views/PhoneCompanion';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<NavSection>('overview');
@@ -43,6 +45,8 @@ export default function App() {
   const [sensorIngestConfigured, setSensorIngestConfigured] = useState<boolean>(false);
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
   const [showWearableStartGate, setShowWearableStartGate] = useState<boolean>(true);
+  const [phoneCameraStream, setPhoneCameraStream] = useState<MediaStream | null>(null);
+  const [phoneSpeak, setPhoneSpeak] = useState<((text: string) => boolean) | null>(null);
 
   // Modals state
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
