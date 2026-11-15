@@ -70,8 +70,33 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
   const [liveConfidence, setLiveConfidence] = useState(0);
   const [liveAngles, setLiveAngles] = useState({ shoulder: null as number | null, elbow: null as number | null, knee: null as number | null });
   const [lastSaved, setLastSaved] = useState<MovementAssessment | null>(null);
-
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const lastAnnouncedPhaseRef = useRef<string>('');
   const activePhase = PHASES.find(phase => elapsed >= phase.start && elapsed < phase.end) || PHASES[PHASES.length - 1];
+
+  function speakInstruction(text: string) {
+    if (!voiceEnabled || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.92;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  useEffect(() => {
+    if (status !== 'running' || !voiceEnabled) return;
+    if (lastAnnouncedPhaseRef.current === activePhase.name) return;
+    lastAnnouncedPhaseRef.current = activePhase.name;
+    speakInstruction(activePhase.instruction);
+  }, [activePhase.name, status, voiceEnabled]);
+
+  const completionAnnouncedRef = useRef(false);
+  useEffect(() => {
+    if (status === 'running' && elapsed >= 300 && !completionAnnouncedRef.current) {
+      completionAnnouncedRef.current = true;
+      speakInstruction('The five minute movement test is complete. Please review and save the assessment.');
+    }
+  }, [elapsed, status, voiceEnabled]);
+
   const subjectAssessments = assessments.filter(item => item.subjectId === subjectId.trim());
   const accepted = subjectAssessments.filter(item => item.qualityStatus === 'accepted' && !item.simulated && Date.now() - new Date(item.completedAt).getTime() <= 30 * 86400000);
   const rejected = subjectAssessments.filter(item => item.qualityStatus === 'rejected' && Date.now() - new Date(item.completedAt).getTime() <= 30 * 86400000);
@@ -206,6 +231,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
       confidenceRef.current = [];
       validFramesRef.current = 0;
       rejectedFramesRef.current = 0;
+      lastAnnouncedPhaseRef.current = '';
       startMsRef.current = Date.now();
       startedAtRef.current = new Date().toISOString();
       setElapsed(0); setLastSaved(null); setLiveConfidence(0);
@@ -285,6 +311,9 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
   }
 
   function reset() {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    lastAnnouncedPhaseRef.current = '';
+    completionAnnouncedRef.current = false;
     stopCamera(); setStatus('idle'); setElapsed(0); setMessage(''); setLiveConfidence(0);
     setLiveAngles({ shoulder: null, elbow: null, knee: null });
   }
@@ -314,6 +343,20 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-white font-mono">CAMERA FEED &amp; POSE TRACKING</h2>
             <span className="text-[10px] font-mono text-slate-400">{modelDevice ? `INFERENCE: ${modelDevice.toUpperCase()}` : 'MODEL NOT LOADED'}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => {
+              const enabled = !voiceEnabled;
+              setVoiceEnabled(enabled);
+              if (enabled && 'speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance('YOMA voice instructions enabled.');
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+              }
+            }} className={voiceEnabled ? "px-3 py-2 rounded-lg bg-cyan-900/60 border border-cyan-700 text-cyan-200 text-xs" : "px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs"}>
+              {voiceEnabled ? 'Voice instructions: ON' : 'Enable voice instructions'}
+            </button>
+            <span className="text-[10px] text-slate-500">Uses this device's browser speech output. Remote phone-speaker pairing is not implemented yet.</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-[10px] text-slate-400 font-mono">CAMERA INPUT</label>
