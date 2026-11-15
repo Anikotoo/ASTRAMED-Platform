@@ -47,6 +47,8 @@ export default function App() {
   const [showWearableStartGate, setShowWearableStartGate] = useState<boolean>(true);
   const [phoneCameraStream, setPhoneCameraStream] = useState<MediaStream | null>(null);
   const [phoneSpeak, setPhoneSpeak] = useState<((text: string) => boolean) | null>(null);
+  const [sendNeckbandState, setSendNeckbandState] = useState<((state: any) => void) | null>(null);
+  const handleNeckbandStateChange = useCallback((state: any) => sendNeckbandState?.(state), [sendNeckbandState]);
 
   // Modals state
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
@@ -278,6 +280,8 @@ export default function App() {
             </div>
           ) : (
             <>
+              <PhonePairingPanel onCameraStream={setPhoneCameraStream} onSpeakReady={speak => setPhoneSpeak(() => speak)} onNeckbandStateSender={setSendNeckbandState} />
+
               {activeSection === 'overview' && (
                 <MissionOverview
                   crewList={crewList}
@@ -352,12 +356,11 @@ export default function App() {
               )}
 
               {activeSection === 'smartwatch' && (
-                <VirtualSmartwatch crewList={crewList} selectedCrew={selectedCrew} />
+                <VirtualSmartwatch crewList={crewList} selectedCrew={selectedCrew} onDemoStateChange={handleNeckbandStateChange} />
               )}
 
               {activeSection === 'yoma' && (
                 <div className="space-y-4">
-                  <PhonePairingPanel onCameraStream={setPhoneCameraStream} onSpeakReady={speak => setPhoneSpeak(() => speak)} />
                   <YomaMovement assessments={movementAssessments} crewList={crewList} onRefresh={fetchData} externalCameraStream={phoneCameraStream} onPhoneSpeak={text => phoneSpeak?.(text) || false} />
                 </div>
               )}
