@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Database, ExternalLink, FileDown, Info, Loader2 } from 'lucide-react';
+import { Search, Database, ExternalLink, Info, Loader2 } from 'lucide-react';
 
 type Study = { id: string; title: string; description: string; organism: string; source: any };
-type StudyFile = { name: string; url: string; type: string; size: string; restricted: boolean; source: any };
-
 const textOf = (...values: unknown[]) => {
   const value = values.find(v => typeof v === 'string' || typeof v === 'number');
   return value == null ? '' : String(value);
@@ -37,37 +35,16 @@ function normalizeStudies(payload: any): Study[] {
   }).filter((item: Study) => item.id);
 }
 
-function normalizeFiles(payload: any): StudyFile[] {
-  const raw = findArrays(payload, ['study_files', 'files', 'results', 'items']);
-  return raw.map((item: any) => {
-    const remote = textOf(item.remote_url, item.download_url, item.url, item.href);
-    const url = remote ? (remote.startsWith('http') ? remote : `https://osdr.nasa.gov${remote.startsWith('/') ? '' : '/'}${remote}`) : '';
-    return {
-      name: textOf(item.file_name, item.filename, item.name, item.label, item.remote_url) || 'NASA OSDR file',
-      url,
-      type: textOf(item.category, item.file_type, item.data_type, item.type, item.file_category),
-      size: (() => { const bytes = Number(item.file_size ?? item.size); return Number.isFinite(bytes) && bytes > 0 ? (bytes >= 1073741824 ? `${(bytes / 1073741824).toFixed(1)} GB` : bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${(bytes / 1024).toFixed(1)} KB`) : textOf(item.file_size, item.size); })(),
-      restricted: Boolean(item.restricted),
-      source: item
-    };
-  }).filter((file: StudyFile) => file.url || file.name);
-}
-
 export const OSDRExplorer: React.FC = () => {
   const [term, setTerm] = useState('astronaut');
   const [studies, setStudies] = useState<Study[]>([]);
-  const [selected, setSelected] = useState<Study | null>(null);
-  const [files, setFiles] = useState<StudyFile[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
-  const [loadingFiles, setLoadingFiles] = useState(false);
   const [error, setError] = useState('');
 
   const search = async () => {
     if (!term.trim()) return;
     setLoadingSearch(true);
     setError('');
-    setSelected(null);
-    setFiles([]);
     try {
       const response = await fetch(`/api/osdr/search?term=${encodeURIComponent(term.trim())}`);
       const payload = await response.json();
@@ -82,24 +59,6 @@ export const OSDRExplorer: React.FC = () => {
     }
   };
 
-  const openFiles = async (study: Study) => {
-    setSelected(study);
-    setFiles([]);
-    setLoadingFiles(true);
-    setError('');
-    try {
-      const response = await fetch(`/api/osdr/studies/${encodeURIComponent(study.id.replace('OSD-', ''))}/files`);
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'Could not retrieve NASA study files');
-      setFiles(normalizeFiles(payload));
-      if (!normalizeFiles(payload).length) setError('No downloadable file records were found in the API response. Open the study page and use its Files panel.');
-    } catch (err: any) {
-      setError(err.message || 'Could not retrieve study files.');
-    } finally {
-      setLoadingFiles(false);
-    }
-  };
-
   return (
     <section className="rounded-xl border border-cyan-900/60 bg-slate-950/80 p-4 sm:p-5 space-y-4">
       <div className="flex items-start gap-3">
@@ -107,7 +66,7 @@ export const OSDRExplorer: React.FC = () => {
         <div className="min-w-0">
           <div className="text-xs font-mono text-cyan-300">NASA OPEN SCIENCE DATA REPOSITORY</div>
           <h2 className="text-base font-bold text-white mt-1">NASA OSDR Data Explorer</h2>
-          <p className="text-xs text-slate-400 mt-1">Search studies and inspect original NASA files. Research datasets are kept separate from live crew telemetry.</p>
+          <p className="text-xs text-slate-400 mt-1">Search NASA studies and open their official pages to access files manually. Research datasets remain separate from live crew telemetry.</p>
         </div>
       </div>
 
@@ -129,27 +88,15 @@ export const OSDRExplorer: React.FC = () => {
               <div className="text-sm font-semibold text-white">{study.title}</div>
               {study.organism && <div className="text-[11px] text-slate-400 mt-1">Organism: {study.organism}</div>}
             </div>
-            <button onClick={() => openFiles(study)} className="shrink-0 rounded-md border border-cyan-800 px-3 py-1.5 text-[11px] text-cyan-300 hover:bg-cyan-950">Browse files</button>
           </div>
           {study.description && <p className="text-xs text-slate-400 line-clamp-3">{study.description}</p>}
           <a className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-cyan-300" href={`https://osdr.nasa.gov/bio/repo/data/studies/${study.id}`} target="_blank" rel="noreferrer">Open NASA study <ExternalLink className="w-3 h-3" /></a>
         </div>)}
       </div>}
 
-      {selected && <div className="rounded-lg border border-cyan-900/60 bg-slate-900 p-3 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <div><div className="text-[10px] font-mono text-cyan-300">FILE CATALOG</div><div className="text-sm font-bold text-white">{selected.id} · {selected.title}</div></div>
-          <a href={`https://osdr.nasa.gov/bio/repo/data/studies/${selected.id}`} target="_blank" rel="noreferrer" className="text-cyan-300"><ExternalLink className="w-4 h-4" /></a>
-        </div>
-        {loadingFiles ? <div className="text-xs text-slate-400 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading file catalog…</div> : files.length > 0 ? files.map((file, index) => <div key={index} className="flex items-start justify-between gap-3 border-t border-slate-800 pt-2">
-          <div className="min-w-0"><div className="text-xs text-slate-200 break-all">{file.name}</div><div className="text-[10px] text-slate-500 mt-1">{file.type}{file.size ? ` · ${file.size}` : ''}</div></div>
-          {file.restricted ? <span className="shrink-0 text-[10px] text-amber-300">RESTRICTED · request access</span> : file.url && <a href={file.url} target="_blank" rel="noreferrer" className="shrink-0 text-cyan-300" title="Open original NASA file"><FileDown className="w-4 h-4" /></a>}
-        </div>) : !loadingFiles && <p className="text-xs text-slate-400">Open the NASA study page's Files panel to inspect the full file catalog and download the original archive. Extract it locally if it is ZIP/TAR before reviewing any CSV.</p>}
-      </div>}
-
       <div className="flex items-start gap-2 rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-[11px] text-slate-400">
         <Info className="w-4 h-4 shrink-0 text-cyan-400 mt-0.5" />
-        <p>OSDR files are not automatically imported as crew telemetry. Many are ZIP, TAR, FASTQ or gene-expression files—not vital-sign CSVs. Download the original file, inspect its documentation, and only use the existing CSV importer for a genuinely compatible table. Never map a research subject to a live crew member unless the study explicitly supports that identity.</p>
+        <p>Use each study's official NASA page and its Files panel to inspect and download original datasets manually. OSDR files are not automatically imported as crew telemetry. Many are ZIP, TAR, FASTQ or gene-expression files—not vital-sign CSVs. Only use the existing CSV importer for a genuinely compatible table, and never map a research subject to a live crew member unless the study explicitly supports that identity.</p>
       </div>
       <a href="https://osdr.nasa.gov/bio/repo/search" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-cyan-300 hover:text-cyan-200">Open full NASA OSDR search portal <ExternalLink className="w-3 h-3" /></a>
     </section>
