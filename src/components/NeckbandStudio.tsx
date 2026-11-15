@@ -145,7 +145,7 @@ export const NeckbandStudio: React.FC = () => {
       const noseY = nose?.[2] > 0.25 ? nose[1] : shoulderMidY - height * 0.2;
       const neckY = noseY + (shoulderMidY - noseY) * 0.72;
       const x = (shoulderMidX / width) * 2 - 1;
-      const y = 1 - (neckY / height) * 2;
+      const y = (1 - (neckY / height) * 2) * (height / width);
       const shoulderSpan = Math.abs(rightShoulder[0] - leftShoulder[0]) / width;
       const scale = Math.max(0.12, Math.min(0.52, shoulderSpan * 0.78));
       const rig = neckbandRef.current;
@@ -170,7 +170,7 @@ export const NeckbandStudio: React.FC = () => {
     setStatus('REQUESTING CAMERA');
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera access requires HTTPS or localhost in a supported browser.');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
       streamRef.current = stream;
       if (!videoRef.current) throw new Error('Camera preview is unavailable.');
       videoRef.current.srcObject = stream;
