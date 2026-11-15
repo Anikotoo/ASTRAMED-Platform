@@ -14,11 +14,14 @@ import {
 interface SettingsViewProps {
   settings: MissionSettings;
   onUpdateSettings: (newSettings: Partial<MissionSettings>) => Promise<void>;
+  isGeminiActive?: boolean;
+  sensorIngestConfigured?: boolean;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
-  onUpdateSettings
+  onUpdateSettings,
+  sensorIngestConfigured = false
 }) => {
   const [formData, setFormData] = useState<MissionSettings>(settings);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -69,6 +72,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <span>Mission parameters and alert thresholds updated persistently.</span>
         </div>
       )}
+
+      <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xs font-bold text-white font-mono">AUTHENTICATED SENSOR GATEWAY</h2>
+          <p className="text-[11px] text-slate-400 mt-1">Accepts device readings only when the backend sensor token is configured.</p>
+        </div>
+        <span className={`px-3 py-1.5 rounded-lg border text-[10px] font-mono ${sensorIngestConfigured ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-amber-950/40 border-amber-800 text-amber-300'}`}>
+          {sensorIngestConfigured ? 'CONFIGURED' : 'NOT CONFIGURED'}
+        </span>
+        {!sensorIngestConfigured && <p className="w-full text-[10px] text-slate-500">Set ASTRAMED_SENSOR_INGEST_TOKEN in the backend deployment environment to enable /api/sensors/ingest. Never expose this token in the browser.</p>}
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Physiological Alert Limits */}
