@@ -13,11 +13,15 @@ export const CrewComparisonModal: React.FC<CrewComparisonModalProps> = ({
   readings,
   onClose
 }) => {
-  const [crewAId, setCrewAId] = useState<string>(crewList[0]?.id || 'crew-01');
-  const [crewBId, setCrewBId] = useState<string>(crewList[1]?.id || 'crew-02');
+  const [crewAId, setCrewAId] = useState<string>(crewList[0]?.id || '');
+  const [crewBId, setCrewBId] = useState<string>(crewList[1]?.id || '');
 
   const crewA = crewList.find(c => c.id === crewAId) || crewList[0];
   const crewB = crewList.find(c => c.id === crewBId) || crewList[1];
+
+  if (crewList.length < 2) {
+    return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"><div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-center"><h2 className="text-white font-bold">Not enough crew profiles</h2><p className="text-xs text-slate-400 mt-2">Add at least two real crew profiles before comparing readings.</p><button onClick={onClose} className="mt-4 px-4 py-2 rounded bg-slate-800 text-white text-xs">Close</button></div></div>;
+  }
 
   const getMetric = (crewId: string, param: string) => {
     const list = readings.filter(r => r.crewId === crewId && r.parameter === param);
