@@ -6,6 +6,7 @@ interface AlertsCenterModalProps {
   alerts: HealthAlert[];
   crewList: CrewMember[];
   onClose: () => void;
+  isDemoMode?: boolean;
   onNavigateToTrends?: (crewId: string, param: string) => void;
 }
 
@@ -13,6 +14,7 @@ export const AlertsCenterModal: React.FC<AlertsCenterModalProps> = ({
   alerts,
   crewList,
   onClose,
+  isDemoMode = false,
   onNavigateToTrends
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -58,6 +60,8 @@ export const AlertsCenterModal: React.FC<AlertsCenterModalProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {isDemoMode && <div className="rounded-lg border border-amber-700 bg-amber-950/50 p-3 text-xs font-bold text-amber-200">DEMO ALERTS — fictional examples for interface testing only. Not generated from real astronaut telemetry.</div>}
 
         {/* Filters */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono bg-slate-950 p-3 rounded-xl border border-slate-800">
