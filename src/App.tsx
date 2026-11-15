@@ -250,7 +250,7 @@ export default function App() {
       {/* Main Workspace Column */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Friendly onboarding guide sits above the mission controls. */}
-        <MrsSpaceGuide onNavigate={section => setActiveSection(section)} />
+        <MrsSpaceGuide activeSection={activeSection} onNavigate={section => setActiveSection(section)} />
 
         {/* Top Mission Status Bar */}
         <TopStatusBar
