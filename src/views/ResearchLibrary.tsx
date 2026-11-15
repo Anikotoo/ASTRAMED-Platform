@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ResearchStudy, StudyType } from '../types/astramed';
+import { ChallengeResourcesPanel } from '../components/ChallengeResourcesPanel';
 import { searchResearchStudies, VERIFIED_SPACE_RESEARCH } from '../utils/researchData';
 import { 
   BookOpen, 
@@ -73,6 +74,7 @@ export const ResearchLibrary: React.FC<ResearchLibraryProps> = ({
 
   return (
     <div className="space-y-6">
+      <ChallengeResourcesPanel />
       {/* Top Header Card */}
       <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
