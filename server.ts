@@ -705,7 +705,7 @@ app.get('/api/osdr/search', async (req: Request, res: Response) => {
 
 app.get('/api/osdr/studies/:accession/files', async (req: Request, res: Response) => {
   const accession = String(req.params.accession || '');
-  if (!/^\\d+(?:\\.\\d+)?$/.test(accession)) {
+  if (!/^\d+(?:\.\d+)?$/.test(accession)) {
     res.status(400).json({ error: 'Invalid NASA OSDR accession' });
     return;
   }
@@ -727,7 +727,7 @@ app.get('/api/osdr/studies/:accession/files', async (req: Request, res: Response
 
 app.get('/api/osdr/studies/:accession/metadata', async (req: Request, res: Response) => {
   const accession = String(req.params.accession || '');
-  if (!/^\\d+(?:\\.\\d+)?$/.test(accession)) {
+  if (!/^\d+(?:\.\d+)?$/.test(accession)) {
     res.status(400).json({ error: 'Invalid NASA OSDR accession' });
     return;
   }
