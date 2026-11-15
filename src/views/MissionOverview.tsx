@@ -1,4 +1,5 @@
 import React from 'react';
+import { EarthGlobe } from '../components/EarthGlobe';
 import { CrewMember, HealthReading, HealthAlert, HealthEvent } from '../types/astramed';
 import { 
   Users, 
@@ -154,6 +155,23 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
           <div className="text-[11px] text-slate-400 mt-1">Persistent storage configured</div>
         </div>
       </div>
+
+      <EarthGlobe />
+
+      <section className="grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
+        <div className="relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/30 p-5 shadow-[0_0_40px_rgba(8,145,178,.08)]">
+          <div className="text-[10px] font-mono tracking-[.25em] text-cyan-300">MOBILITY & PERFORMANCE</div>
+          <h2 className="mt-2 text-lg font-bold text-white">YOMA Mobility Assessment</h2>
+          <p className="mt-1 max-w-xl text-xs leading-relaxed text-slate-400">Run a camera-based movement assessment with local pose estimation, quality checks and a saved assessment record.</p>
+          <button onClick={() => onNavigate('yoma')} className="mt-4 rounded-lg bg-cyan-500 px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-cyan-300">Open YOMA Camera ↗</button>
+        </div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+          <div className="text-[10px] font-mono tracking-[.25em] text-cyan-300">WEARABLE SYSTEMS</div>
+          <h2 className="mt-2 text-lg font-bold text-white">Virtual Neckband & Devices</h2>
+          <p className="mt-1 text-xs leading-relaxed text-slate-400">Open the live camera overlay lab or connect a compatible Bluetooth heart-rate device.</p>
+          <button onClick={() => onNavigate('smartwatch')} className="mt-4 rounded-lg border border-cyan-400/30 bg-cyan-950/40 px-4 py-2.5 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-900/60">Open Wearable Lab ↗</button>
+        </div>
+      </section>
 
       {/* Crew Health Roster Grid */}
       <div>

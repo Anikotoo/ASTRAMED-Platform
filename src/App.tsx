@@ -345,9 +345,7 @@ export default function App() {
                 <CrewProfiles crewList={crewList} onSaved={fetchData} />
               )}
 
-              <div className={activeSection === 'smartwatch' ? 'block' : 'hidden'}>
-                <VirtualSmartwatch crewList={crewList} selectedCrew={selectedCrew} />
-              </div>
+              {activeSection === 'smartwatch' && <VirtualSmartwatch crewList={crewList} selectedCrew={selectedCrew} />}
 
               {activeSection === 'yoma' && (
                 <div className="space-y-4">

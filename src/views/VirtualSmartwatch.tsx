@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { NeckbandStudio } from '../components/NeckbandStudio';
 import { Activity, Battery, Bluetooth, CheckCircle2, Clock3, Heart, Pause, Play, Radio, RotateCcw, ShieldAlert, Watch, Wifi, Volume2, VolumeX, XCircle } from 'lucide-react';
 import { CrewMember } from '../types/astramed';
 
@@ -207,6 +208,7 @@ export const VirtualSmartwatch: React.FC<VirtualSmartwatchProps> = ({ crewList, 
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      <NeckbandStudio />
       <div className="rounded-xl border border-amber-700/70 bg-amber-950/30 p-4 flex items-start gap-3">
         <ShieldAlert className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
         <div>
