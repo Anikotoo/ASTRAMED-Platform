@@ -201,3 +201,27 @@ export interface AIChatMessage {
   note?: string;
   sourceDisclosure?: string;
 }
+
+
+export interface MovementAssessment {
+  id: string;
+  subjectId: string;
+  subjectLabel: string;
+  startedAt: string;
+  completedAt: string;
+  durationSeconds: number;
+  protocolVersion: string;
+  modelName: string;
+  modelVersion: string;
+  cameraLabel: string;
+  source: 'camera_yolo_pose';
+  simulated: false;
+  qualityStatus: 'accepted' | 'rejected';
+  measurements: Record<string, number>;
+  quality: {
+    validFrames: number;
+    rejectedFrames: number;
+    meanConfidence: number;
+    phaseFrameCounts: Record<string, number>;
+  };
+}
