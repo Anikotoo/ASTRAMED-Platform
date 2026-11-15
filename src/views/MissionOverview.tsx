@@ -53,7 +53,8 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
     const sleep = crewReadings.find(r => r.parameter === 'sleep_duration')?.value || '--';
     const hasAlert = alerts.some(a => a.crewId === crewId);
     const hasData = crewReadings.length > 0;
-    return { hr, sys, quad, sleep, hasAlert, hasData };
+    const hasVerifiedData = crewReadings.some(reading => reading.status !== 'unverified');
+    return { hr, sys, quad, sleep, hasAlert, hasData, hasVerifiedData };
   };
 
   return (
@@ -198,13 +199,15 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
                   </div>
                   {!vitals.hasData ? (
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">NO DATA</span>
+                  ) : !vitals.hasVerifiedData ? (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-300 border border-amber-800">UNVERIFIED</span>
                   ) : vitals.hasAlert ? (
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-400 border border-amber-800">
                       ALERT
                     </span>
                   ) : (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-800">
-                      NOMINAL
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">
+                      NO ALERT
                     </span>
                   )}
                 </div>
@@ -272,7 +275,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
                         {r.parameter.replace(/_/g, ' ')}
                       </div>
                       <div className="text-[11px] text-slate-400 font-mono">
-                        {crew?.name || r.crewId} • {r.source.replace(/_/g, ' ')}
+                        {crew?.name || r.crewId} • {r.source.replace(/_/g, ' ')}{r.reportedSource ? ` (file claimed: ${r.reportedSource})` : ''}
                       </div>
                     </div>
                   </div>
