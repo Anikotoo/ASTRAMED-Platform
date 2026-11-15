@@ -131,9 +131,16 @@ function readDb(): AstramedDatabase {
     if (db.settings.missionName === 'Astra-X ISS Expedition 75') {
       delete db.settings.missionName;
     }
+    let settingsChanged = false;
+    if (db.settings.missionName === 'Astra-X ISS Expedition 75') {
+      delete db.settings.missionName;
+      settingsChanged = true;
+    }
     if (db.settings.missionStartDate === '2026-01-05T00:00:00.000Z') {
       delete db.settings.missionStartDate;
+      settingsChanged = true;
     }
+    if (settingsChanged) writeDb(db);
 
     return db;
   } catch (error) {
@@ -429,6 +436,45 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.get('/api/crew', (_req: Request, res: Response) => {
   const db = readDb();
   res.json(db.crew);
+});
+
+app.post('/api/crew', (req: Request, res: Response) => {
+  const body = req.body || {};
+  const name = safeText(body.name, 160);
+  const callsign = safeText(body.callsign, 80);
+  const role = safeText(body.role, 80);
+  const allowedRoles = ['Commander', 'Flight Engineer', 'Mission Specialist', 'Payload Specialist', 'Medical Officer'];
+  if (!name || !callsign || !allowedRoles.includes(role)) {
+    res.status(400).json({ error: 'Display name, callsign, and a valid crew role are required.' });
+    return;
+  }
+  const db = readDb();
+  const id = `crew_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const member: any = {
+    id,
+    name,
+    callsign,
+    role,
+    mission: safeText(body.mission, 160) || 'Mission not specified',
+    avatarSeed: id
+  };
+  const age = Number(body.age);
+  if (Number.isFinite(age) && age >= 18 && age <= 100) member.age = age;
+  if (body.sex === 'male' || body.sex === 'female') member.sex = body.sex;
+  if (body.baseline && typeof body.baseline === 'object') {
+    const baseline: Record<string, number> = {};
+    for (const key of ['restingHeartRate', 'bloodPressureSys', 'bloodPressureDia', 'weightKg', 'vo2Max', 'boneDensityTScore', 'quadStrengthBaseline']) {
+      const value = Number(body.baseline[key]);
+      if (Number.isFinite(value)) baseline[key] = value;
+    }
+    if (Object.keys(baseline).length) member.baseline = baseline;
+  }
+  db.crew.push(member);
+  if (!writeDb(db)) {
+    res.status(500).json({ error: 'Could not save crew profile.' });
+    return;
+  }
+  res.status(201).json(member);
 });
 
 // ============================================================
@@ -753,10 +799,20 @@ app.post('/api/movement-assessments', (req: Request, res: Response) => {
     }
   }
 
+  const phaseCounts = quality.phaseFrameCounts && typeof quality.phaseFrameCounts === 'object'
+    ? quality.phaseFrameCounts as Record<string, unknown>
+    : {};
+  const hasAllMovementPhases =
+    Number(phaseCounts.shoulderSamples) >= 10 &&
+    Number(phaseCounts.elbowSamples) >= 10 &&
+    Number(phaseCounts.kneeSamples) >= 10 &&
+    Number.isFinite(measurements.shoulder_rom_deg) &&
+    Number.isFinite(measurements.elbow_rom_deg) &&
+    Number.isFinite(measurements.knee_rom_deg);
   const qualityStatus =
     validFrames >= 30 &&
     meanConfidence >= 0.55 &&
-    Object.keys(measurements).length > 0
+    hasAllMovementPhases
       ? 'accepted'
       : 'rejected';
 
