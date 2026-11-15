@@ -128,9 +128,6 @@ function readDb(): AstramedDatabase {
       writeDb(db);
     }
 
-    if (db.settings.missionName === 'Astra-X ISS Expedition 75') {
-      delete db.settings.missionName;
-    }
     let settingsChanged = false;
     if (db.settings.missionName === 'Astra-X ISS Expedition 75') {
       delete db.settings.missionName;
