@@ -37,6 +37,7 @@ interface AstramedDatabase {
   readings: HealthReading[];
   importedDatasets: ImportedDataset[];
   events: HealthEvent[];
+  movementAssessments: any[];
   settings: Partial<MissionSettings> & Record<string, any>;
 }
 
@@ -46,6 +47,7 @@ function emptyDatabase(): AstramedDatabase {
     readings: [],
     importedDatasets: [],
     events: [],
+    movementAssessments: [],
     settings: {}
   };
 }
@@ -54,35 +56,86 @@ function readDb(): AstramedDatabase {
   try {
     if (!fs.existsSync(DB_PATH)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
-
       if (
         path.resolve(SEED_DB_PATH) !== path.resolve(DB_PATH) &&
         fs.existsSync(SEED_DB_PATH)
       ) {
         fs.copyFileSync(SEED_DB_PATH, DB_PATH);
       } else {
-        fs.writeFileSync(
-          DB_PATH,
-          JSON.stringify(emptyDatabase(), null, 2),
-          'utf-8'
-        );
+        fs.writeFileSync(DB_PATH, JSON.stringify(emptyDatabase(), null, 2), 'utf-8');
       }
     }
 
-    const raw = fs.readFileSync(DB_PATH, 'utf-8');
-    const parsed = JSON.parse(raw);
-
-    return {
+    const parsed = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+    const db: AstramedDatabase = {
       ...emptyDatabase(),
       ...parsed,
       crew: Array.isArray(parsed.crew) ? parsed.crew : [],
       readings: Array.isArray(parsed.readings) ? parsed.readings : [],
-      importedDatasets: Array.isArray(parsed.importedDatasets)
-        ? parsed.importedDatasets
-        : [],
+      importedDatasets: Array.isArray(parsed.importedDatasets) ? parsed.importedDatasets : [],
       events: Array.isArray(parsed.events) ? parsed.events : [],
+      movementAssessments: Array.isArray(parsed.movementAssessments) ? parsed.movementAssessments : [],
       settings: parsed.settings || {}
     };
+
+    // One-time cleanup of the repository's fictional Expedition 75 demo crew and telemetry.
+    // Preserve unrelated user-created records and all future camera assessments.
+    const legacyNames = new Set([
+      'Sarah Vance',
+      'Dr. Andrew Chen',
+      'Dr. Elena Rostova',
+      'Kenji Sato'
+    ]);
+    const legacyCrewIds = new Set(
+      db.crew
+        .filter((member: any) =>
+          /^crew-0[1-4]$/.test(String(member.id || '')) &&
+          legacyNames.has(String(member.name || ''))
+        )
+        .map((member: any) => String(member.id))
+    );
+    const legacyDatasets = new Set(
+      db.importedDatasets
+        .filter(dataset =>
+          /Expedition 75 Telemetry Sample/i.test(String(dataset.name || '')) ||
+          /astronaut_telemetry_sample\.csv/i.test(String(dataset.filename || '')) ||
+          (Array.isArray(dataset.crewIdsAffected) && dataset.crewIdsAffected.some((id: string) => legacyCrewIds.has(id)))
+        )
+        .map(dataset => dataset.id)
+    );
+    const hadLegacyDemoData =
+      legacyCrewIds.size > 0 ||
+      db.readings.some(reading => reading.isBuiltIn === true || legacyCrewIds.has(reading.crewId) || legacyDatasets.has(reading.datasetId || '')) ||
+      legacyDatasets.size > 0 ||
+      db.events.some(event =>
+        legacyCrewIds.has(event.crewId || '') ||
+        /Expedition 75 Telemetry Sample|US EVA-89 Completed|Hypertensive Reading & Muscle Unloading Alert|Autonomous Ultrasound & OCT Scan/i.test(String(event.title || ''))
+      );
+
+    if (hadLegacyDemoData) {
+      db.crew = db.crew.filter((member: any) => !legacyCrewIds.has(String(member.id)));
+      db.readings = db.readings.filter(reading =>
+        reading.isBuiltIn !== true &&
+        !legacyCrewIds.has(reading.crewId) &&
+        !legacyDatasets.has(reading.datasetId || '')
+      );
+      db.importedDatasets = db.importedDatasets.filter(dataset => !legacyDatasets.has(dataset.id));
+      db.events = db.events.filter(event =>
+        !legacyCrewIds.has(event.crewId || '') &&
+        !/Expedition 75 Telemetry Sample|US EVA-89 Completed|Hypertensive Reading & Muscle Unloading Alert|Autonomous Ultrasound & OCT Scan/i.test(String(event.title || ''))
+      );
+      console.warn('Removed legacy fictional Expedition 75 demo profiles, readings, datasets, and events.');
+      writeDb(db);
+    }
+
+    if (db.settings.missionName === 'Astra-X ISS Expedition 75') {
+      delete db.settings.missionName;
+    }
+    if (db.settings.missionStartDate === '2026-01-05T00:00:00.000Z') {
+      delete db.settings.missionStartDate;
+    }
+
+    return db;
   } catch (error) {
     console.error('Database read failed:', error);
     return emptyDatabase();
@@ -350,7 +403,9 @@ const GEMINI_MODEL =
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
-    version: '2.2.0',
+    version: '2.3.0',
+    movementAssessmentsEnabled: true,
+    poseInference: 'client-side-yolo-pose',
     openrouterConfigured: hasOpenRouterKey,
     geminiConfigured: hasGeminiKey,
     activeProvider: hasOpenRouterKey
@@ -643,6 +698,100 @@ app.delete('/api/datasets', (_req: Request, res: Response) => {
     deletedReadings,
     message: 'Imported data cleared. Baseline records were retained.'
   });
+});
+
+// ============================================================
+// YOMA CAMERA-BASED MOVEMENT ASSESSMENTS
+// ============================================================
+
+app.get('/api/movement-assessments', (req: Request, res: Response) => {
+  const db = readDb();
+  const subjectId = String(req.query.subjectId || '');
+  const records = db.movementAssessments
+    .filter(item => !subjectId || item.subjectId === subjectId)
+    .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+  res.json(records.slice(0, 100));
+});
+
+app.post('/api/movement-assessments', (req: Request, res: Response) => {
+  const body = req.body || {};
+  const subjectId = safeText(body.subjectId, 120);
+  const subjectLabel = safeText(body.subjectLabel, 160);
+  const modelName = safeText(body.modelName, 120);
+  const startedAt = safeText(body.startedAt, 80);
+  const completedAt = safeText(body.completedAt, 80);
+  const durationSeconds = Number(body.durationSeconds);
+  const quality = body.quality && typeof body.quality === 'object' ? body.quality : {};
+  const inputMeasurements = body.measurements && typeof body.measurements === 'object' ? body.measurements : {};
+
+  if (!subjectId || !subjectLabel || !startedAt || !completedAt || !modelName.toLowerCase().includes('yolo')) {
+    res.status(400).json({ error: 'Subject, timestamps, and a YOLO model identity are required.' });
+    return;
+  }
+  if (!Number.isFinite(durationSeconds) || durationSeconds < 240 || durationSeconds > 360) {
+    res.status(400).json({ error: 'YOMA assessments must run for approximately five minutes.' });
+    return;
+  }
+  if (body.simulated === true || body.source !== 'camera_yolo_pose') {
+    res.status(400).json({ error: 'Simulated or non-camera data cannot be saved as a YOMA camera assessment.' });
+    return;
+  }
+
+  const validFrames = Math.max(0, Math.floor(Number(quality.validFrames) || 0));
+  const rejectedFrames = Math.max(0, Math.floor(Number(quality.rejectedFrames) || 0));
+  const meanConfidence = Number(quality.meanConfidence);
+  if (!Number.isFinite(meanConfidence) || meanConfidence < 0 || meanConfidence > 1) {
+    res.status(400).json({ error: 'A valid pose-confidence summary is required.' });
+    return;
+  }
+
+  const measurements: Record<string, number> = {};
+  for (const [key, value] of Object.entries(inputMeasurements)) {
+    const numeric = Number(value);
+    if (/^[a-zA-Z][a-zA-Z0-9_]{0,79}$/.test(key) && Number.isFinite(numeric)) {
+      measurements[key] = Number(numeric.toFixed(2));
+    }
+  }
+
+  const qualityStatus =
+    validFrames >= 30 &&
+    meanConfidence >= 0.55 &&
+    Object.keys(measurements).length > 0
+      ? 'accepted'
+      : 'rejected';
+
+  const assessment = {
+    id: `yoma_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    subjectId,
+    subjectLabel,
+    startedAt,
+    completedAt,
+    durationSeconds: Math.round(durationSeconds),
+    protocolVersion: 'YOMA-5M-v1',
+    modelName,
+    modelVersion: safeText(body.modelVersion, 80),
+    cameraLabel: safeText(body.cameraLabel, 160) || 'Browser camera',
+    source: 'camera_yolo_pose',
+    simulated: false,
+    qualityStatus,
+    measurements: qualityStatus === 'accepted' ? measurements : {},
+    quality: {
+      validFrames,
+      rejectedFrames,
+      meanConfidence: Number(meanConfidence.toFixed(3)),
+      phaseFrameCounts: quality.phaseFrameCounts && typeof quality.phaseFrameCounts === 'object'
+        ? quality.phaseFrameCounts
+        : {}
+    }
+  };
+
+  const db = readDb();
+  db.movementAssessments.unshift(assessment);
+  if (!writeDb(db)) {
+    res.status(500).json({ error: 'Could not save YOMA assessment.' });
+    return;
+  }
+  res.status(201).json(assessment);
 });
 
 // ============================================================
