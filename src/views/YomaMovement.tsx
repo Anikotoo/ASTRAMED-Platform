@@ -69,9 +69,9 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
   const [selectedCameraId, setSelectedCameraId] = useState('');
   const [liveConfidence, setLiveConfidence] = useState(0);
   const [liveAngles, setLiveAngles] = useState({ shoulder: null as number | null, elbow: null as number | null, knee: null as number | null });
-  const [lastSaved, setLastSaved] = useState<MovementAssessment | null>(null);\n  const [voiceEnabled, setVoiceEnabled] = useState(false);\n  const lastAnnouncedPhaseRef = useRef<string>('');\n\n  function speakInstruction(text: string) {\n    if (!voiceEnabled || !('speechSynthesis' in window)) return;\n    window.speechSynthesis.cancel();\n    const utterance = new SpeechSynthesisUtterance(text);\n    utterance.rate = 0.92;\n    utterance.onstart = () => undefined;\n    window.speechSynthesis.speak(utterance);\n  }\n\n  useEffect(() => {\n    if (status !== 'running') return;\n    if (lastAnnouncedPhaseRef.current === activePhase.name) return;\n    lastAnnouncedPhaseRef.current = activePhase.name;\n    speakInstruction(activePhase.instruction);\n  }, [activePhase.name, status, voiceEnabled]);\n\n  useEffect(() => {\n    if (status === 'running' && elapsed >= 300) speakInstruction('The five minute movement test is complete. Please review and save the assessment.');\n  }, [elapsed, status, voiceEnabled]);
+  const [lastSaved, setLastSaved] = useState<MovementAssessment | null>(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);\n  const lastAnnouncedPhaseRef = useRef<string>('');\n\n  function speakInstruction(text: string) {\n    if (!voiceEnabled || !('speechSynthesis' in window)) return;\n    window.speechSynthesis.cancel();\n    const utterance = new SpeechSynthesisUtterance(text);\n    utterance.rate = 0.92;\n    utterance.onstart = () => undefined;\n    window.speechSynthesis.speak(utterance);\n  }\n\n  useEffect(() => {\n    if (status !== 'running') return;\n    if (lastAnnouncedPhaseRef.current === activePhase.name) return;\n    lastAnnouncedPhaseRef.current = activePhase.name;\n    speakInstruction(activePhase.instruction);\n  }, [activePhase.name, status, voiceEnabled]);\n\n  useEffect(() => {\n    if (status === 'running' && elapsed >= 300) speakInstruction('The five minute movement test is complete. Please review and save the assessment.');\n  }, [elapsed, status, voiceEnabled]);
 
-  const activePhase = PHASES.find(phase => elapsed >= phase.start && elapsed < phase.end) || PHASES[PHASES.length - 1];
   const subjectAssessments = assessments.filter(item => item.subjectId === subjectId.trim());
   const accepted = subjectAssessments.filter(item => item.qualityStatus === 'accepted' && !item.simulated && Date.now() - new Date(item.completedAt).getTime() <= 30 * 86400000);
   const rejected = subjectAssessments.filter(item => item.qualityStatus === 'rejected' && Date.now() - new Date(item.completedAt).getTime() <= 30 * 86400000);
@@ -206,6 +206,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
       confidenceRef.current = [];
       validFramesRef.current = 0;
       rejectedFramesRef.current = 0;
+      lastAnnouncedPhaseRef.current = '';
       startMsRef.current = Date.now();
       startedAtRef.current = new Date().toISOString();
       setElapsed(0); setLastSaved(null); setLiveConfidence(0);
