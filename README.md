@@ -4,12 +4,12 @@ ASTRAMED is a prototype for astronaut health decision support. Its monitoring de
 
 ## Current implementation
 
-- **YOMA:** browser-based five-minute movement assessment using Ultralytics YOLO26n Pose; records 2D shoulder, elbow and knee movement estimates, coordination difference, pose confidence and quality status.
+- **YOMA:** browser-based five-minute movement assessment using Ultralytics YOLO26n Pose; records 2D shoulder, elbow and knee movement estimates, coordination difference, pose confidence and quality status. Optional spoken phase instructions use the current browser/device speech output after the user enables voice. Wireless phone camera/speaker QR pairing is not implemented in this release.
 - **30-day mobility history:** compares accepted, non-simulated assessments for the same subject. Rejected assessments remain auditable but are excluded from progress comparisons.
 - **Crew registry:** real or anonymised profiles with no invented age, flight history or medical baseline.
 - **Data provenance:** manual readings and uploaded files are marked unverified. Uploaded source labels are retained as claims, not treated as verified provenance.
 - **Sensor gateway:** authenticated API endpoint for compatible wearable or medical sensor integrations.
-- **Research and AI:** NASA OSDR, NASA Life Sciences and Europe PMC are research sources; research records are not live astronaut telemetry.
+- **Research and AI:** the assistant receives the latest 12 chat turns for follow-up context and mission records including baselines, imported datasets, events, alerts and YOMA assessments. NASA OSDR, NASA Life Sciences and Europe PMC are research sources; research records are not live astronaut telemetry.
 
 ## Run locally
 
