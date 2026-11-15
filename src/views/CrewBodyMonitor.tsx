@@ -33,7 +33,7 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
 
   const activeCrew = selectedCrew || crewList[0];
   if (!activeCrew) {
-    return <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-8 text-center"><Activity className="w-8 h-8 text-slate-500 mx-auto mb-3" /><h2 className="text-base font-bold text-white">No astronaut profile available</h2><p className="text-xs text-slate-400 mt-2">No crew profile or verified health reading has been added yet. Import a verified dataset or add a real crew profile before viewing personal telemetry.</p></div>;
+    return <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-8 text-center"><Activity className="w-8 h-8 text-slate-500 mx-auto mb-3" /><h2 className="text-base font-bold text-white">No astronaut profile available</h2><p className="text-xs text-slate-400 mt-2">No crew profile has been added yet. Create a real or anonymised profile first; imported records remain unverified until independently reviewed.</p></div>;
   }
   const crewReadings = readings.filter(r => r.crewId === activeCrew?.id);
   const unverifiedCount = crewReadings.filter(reading => reading.status === 'unverified').length;
