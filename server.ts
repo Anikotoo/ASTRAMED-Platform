@@ -593,9 +593,12 @@ app.post('/api/sensors/ingest', (req: Request, res: Response) => {
   const value = Number(body.value);
   const timestamp = safeText(body.timestamp, 80);
   const confidence = Number(body.qualityConfidence);
+  const category = safeText(body.category, 40);
   const source = body.source === 'wearable_sensor' ? 'wearable_sensor' : 'sensor_gateway';
+  const allowedCategories = ['cardiovascular', 'musculoskeletal', 'general', 'environmental'];
+  const allowedParameters = ['heart_rate', 'blood_pressure_sys', 'blood_pressure_dia', 'resting_heart_rate', 'hrv', 'muscle_strength_quad', 'muscle_strength_bicep', 'muscle_mass', 'bone_density_tscore', 'exercise_duration', 'body_weight', 'sleep_duration', 'sleep_efficiency', 'spo2', 'radiation_cumulative', 'cabin_co2', 'cabin_pressure'];
 
-  if (!crewId || !deviceId || !sensorType || !parameter || !unit || !Number.isFinite(value) || !Number.isFinite(Date.parse(timestamp))) {
+  if (!crewId || !deviceId || !sensorType || !parameter || !unit || !Number.isFinite(value) || !Number.isFinite(Date.parse(timestamp)) || !allowedCategories.includes(category) || !allowedParameters.includes(parameter)) {
     res.status(400).json({ error: 'crewId, deviceId, sensorType, parameter, numeric value, unit, and ISO timestamp are required.' });
     return;
   }
@@ -616,7 +619,7 @@ app.post('/api/sensors/ingest', (req: Request, res: Response) => {
   const reading: HealthReading = {
     id: `sensor_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     crewId,
-    category: safeText(body.category, 40) as HealthReading['category'],
+    category: category as HealthReading['category'],
     parameter: parameter as HealthReading['parameter'],
     value,
     unit,
@@ -626,7 +629,7 @@ app.post('/api/sensors/ingest', (req: Request, res: Response) => {
     sensorType,
     qualityConfidence: confidence,
     measurementMethod: safeText(body.measurementMethod, 160) || 'Connected medical sensor',
-    status: 'unverified',
+    status: 'verified',
     notes: safeText(body.notes, 1000) || undefined,
     isBuiltIn: false
   };
