@@ -81,13 +81,13 @@ export const ResearchLibrary: React.FC<ResearchLibraryProps> = ({
           <div>
             <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
               <Database className="w-3.5 h-3.5 text-cyan-400" />
-              <span>LIVE EUROPE PMC SEARCH • NASA OSDR RECORDS NOT YET VERIFIED</span>
+              <span>LIVE NASA OSDR + EUROPE PMC RESEARCH • NOT CREW TELEMETRY</span>
             </div>
             <h1 className="text-xl font-bold text-white tracking-wide mt-1">
               Spaceflight Biomedical Research Library
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              Peer-reviewed evidence on microgravity unloading, radiation kinetics, bone loss, and cardiovascular remodeling.
+              NASA study records and peer-reviewed literature. These are research datasets, not live readings for individual crew members.
             </p>
           </div>
 
