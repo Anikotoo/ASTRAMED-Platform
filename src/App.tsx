@@ -374,13 +374,13 @@ export default function App() {
                 <CrewProfiles crewList={crewList} onSaved={fetchData} />
               ))}
 
-              {activeSection === 'smartwatch' && <VirtualSmartwatch crewList={crewList} selectedCrew={selectedCrew} />}
+              {activeSection === 'smartwatch' && (isDemoMode ? <div className="rounded-xl border border-amber-800 bg-amber-950/30 p-6 text-sm text-amber-100">Device connections are disabled in Demo Mode. Exit Demo Mode to access wearable tools.</div> : <VirtualSmartwatch crewList={crewList} selectedCrew={selectedCrew} />)}
 
-              {activeSection === 'yoma' && (
+              {activeSection === 'yoma' && (isDemoMode ? <div className="rounded-xl border border-amber-800 bg-amber-950/30 p-6 text-sm text-amber-100">Camera assessments are disabled in Demo Mode. Exit Demo Mode to run a real assessment.</div> : (
                 <div className="space-y-4">
                   <YomaMovement assessments={movementAssessments} crewList={crewList} onRefresh={fetchData} />
                 </div>
-              )}
+              ))}
 
               {activeSection === 'settings' && (isDemoMode ? <div className="rounded-xl border border-amber-800 bg-amber-950/30 p-6 text-sm text-amber-100">Mission settings are locked in Demo Mode. Exit Demo Mode to edit settings.</div> : (
                 <SettingsView
@@ -403,7 +403,7 @@ export default function App() {
           { id: 'trends' as NavSection, label: 'Trends', Icon: LineChart },
           { id: 'ai_assistant' as NavSection, label: 'AI', Icon: Bot }
         ].map(({ id, label, Icon }) => (
-          <button key={id} onClick={() => setActiveSection(id)} aria-current={activeSection === id ? 'page' : undefined}
+          <button key={id} onClick={() => navigateSection(id)} aria-current={activeSection === id ? 'page' : undefined}
             className={`min-h-14 flex flex-col items-center justify-center gap-1 text-[10px] font-medium ${activeSection === id ? 'text-cyan-300' : 'text-slate-400'}`}>
             <Icon className="h-5 w-5" />{label}
           </button>
@@ -419,6 +419,7 @@ export default function App() {
           alerts={displayAlerts}
           crewList={displayCrewList}
           onClose={() => setIsAlertsOpen(false)}
+          isDemoMode={isDemoMode}
         />
       )}
 
@@ -442,6 +443,7 @@ export default function App() {
           readings={displayReadings}
           alerts={displayAlerts}
           missionName={isDemoMode ? 'ASTRAMED DEMO MISSION' : settings.missionName}
+          isDemoMode={isDemoMode}
           onClose={() => setIsReportOpen(false)}
         />
       )}
