@@ -47,6 +47,7 @@ interface PhonePairSession {
   pin: string;
   hostToken: string;
   phoneToken?: string;
+  phoneClientId?: string;
   offer?: RTCSessionDescriptionInit;
   answer?: RTCSessionDescriptionInit;
   expiresAt: number;
@@ -98,15 +99,26 @@ app.post('/api/phone-pairing/:pairId/offer', (req: Request, res: Response) => {
 });
 app.post('/api/phone-pairing/:pairId/join', (req: Request, res: Response) => {
   const pair = getPair(req, res); if (!pair) return;
-  if (pair.phoneToken) return res.status(409).json({ error: 'This pairing session has already been used.' });
   const submittedPin = String(req.body?.pin || '');
-  if (!/^\d{6}$/.test(submittedPin) || !tokenMatches(submittedPin, pair.pin)) {
+  if (!/^\\d{6}$/.test(submittedPin) || !tokenMatches(submittedPin, pair.pin)) {
     pair.pinAttempts += 1;
     if (pair.pinAttempts >= 8) { phonePairSessions.delete(pair.id); return res.status(429).json({ error: 'Too many incorrect PIN attempts. Start a new pairing.' }); }
     return res.status(401).json({ error: 'Incorrect pairing PIN.' });
   }
+  const clientId = String(req.body?.clientId || '');
+  if (clientId.length < 20 || clientId.length > 128 || !/^[a-zA-Z0-9_-]+$/.test(clientId)) {
+    return res.status(400).json({ error: 'A valid phone pairing client ID is required. Reload the QR page and try again.' });
+  }
+  // Let the same phone browser retry after a partial WebRTC failure, but do not let another device take over.
+  if (pair.phoneToken) {
+    if (pair.phoneClientId !== clientId) {
+      return res.status(409).json({ error: 'This pairing session has already been used by another phone. Generate a fresh QR code.' });
+    }
+    return res.json({ phoneToken: pair.phoneToken, offer: pair.offer, expiresAt: new Date(pair.expiresAt).toISOString() });
+  }
   // A valid PIN waiting for the host offer is not a failed PIN attempt.
   if (!pair.offer) return res.status(409).json({ error: 'The computer is not ready yet. Try again in a moment.' });
+  pair.phoneClientId = clientId;
   pair.phoneToken = randomToken();
   res.json({ phoneToken: pair.phoneToken, offer: pair.offer, expiresAt: new Date(pair.expiresAt).toISOString() });
 });
