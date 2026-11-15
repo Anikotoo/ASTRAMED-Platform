@@ -41,7 +41,7 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
   const [pairId, setPairId] = useState('');
   const [pin, setPin] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
-  const [status, setStatus] = useState<'idle' | 'waiting' | 'connecting' | 'connected' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'preparing' | 'waiting' | 'connecting' | 'connected' | 'error'>('idle');
   const [error, setError] = useState('');
 
   function stopPolling() {
@@ -80,15 +80,13 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
   async function createPairing() {
     disconnect();
     setError('');
+    setStatus('preparing');
+    let created: any = null;
+    let pc: RTCPeerConnection | null = null;
     try {
-      const created = await readJson(await fetch('/api/phone-pairing/create', { method: 'POST' }));
-      setPairId(created.pairId);
-      setPin(created.pin);
-      setExpiresAt(created.expiresAt);
+      created = await readJson(await fetch('/api/phone-pairing/create', { method: 'POST' }));
       hostTokenRef.current = created.hostToken;
-      setStatus('waiting');
-
-      const pc = new RTCPeerConnection(ICE_SERVERS);
+      pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
       pc.addTransceiver('video', { direction: 'sendrecv' });
       const channel = pc.createDataChannel('astramed-control');
@@ -103,20 +101,22 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
       };
       channel.onclose = () => {
         onNeckbandStateSender?.(null);
-        if (pc.connectionState !== 'closed') setStatus('waiting');
+        if (pc && pcRef.current === pc && pc.connectionState !== 'closed' && pc.connectionState !== 'failed') setStatus('waiting');
       };
       pc.ontrack = event => {
         const stream = event.streams[0] || new MediaStream([event.track]);
         onCameraStream(stream);
-        setStatus('connected');
+        if (pc?.connectionState === 'connected') setStatus('connected');
       };
       pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-          setError('Phone connection lost. Try pairing again; some networks block direct WebRTC connections.');
+        if (pc?.connectionState === 'failed') {
+          setError('Phone connection failed. Try pairing again; some networks block direct WebRTC connections.');
           setStatus('error');
+        } else if (pc?.connectionState === 'disconnected') {
+          setError('Phone connection was interrupted. Waiting for the network to recover…');
+          setStatus('connecting');
         }
       };
-
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await waitForIce(pc);
@@ -125,12 +125,16 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${created.hostToken}` },
         body: JSON.stringify({ sdp: pc.localDescription })
       }));
-
+      // Reveal the QR/PIN only after the host offer is available to the phone.
+      setPairId(created.pairId);
+      setPin(created.pin);
+      setExpiresAt(created.expiresAt);
+      setStatus('waiting');
       let attempts = 0;
       pollRef.current = window.setInterval(async () => {
-        if (++attempts > 90 || !pcRef.current) {
+        if (++attempts > 90 || pcRef.current !== pc) {
           stopPolling();
-          if (pc.connectionState !== 'connected') setError('Pairing expired. Generate a new QR code and PIN.');
+          if (pc?.connectionState !== 'connected') setError('Pairing expired. Generate a new QR code and PIN.');
           return;
         }
         try {
@@ -139,8 +143,9 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
           });
           if (response.status === 204) return;
           const answer = await readJson(response);
-          if (!pc.currentRemoteDescription) {
-            await pc.setRemoteDescription(answer.sdp);
+          if (!pc?.currentRemoteDescription) {
+            setStatus('connecting');
+            await pc?.setRemoteDescription(answer.sdp);
             stopPolling();
           }
         } catch (err: any) {
@@ -150,11 +155,18 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
         }
       }, 1000);
     } catch (err: any) {
+      stopPolling();
+      pc?.close();
+      if (pcRef.current === pc) pcRef.current = null;
+      channelRef.current = null;
+      if (created?.pairId && created?.hostToken) void fetch(`/api/phone-pairing/${created.pairId}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${created.hostToken}` }
+      }).catch(() => undefined);
+      hostTokenRef.current = '';
       setError(err.message || 'Could not create a secure phone pairing.');
       setStatus('error');
     }
   }
-
   function speakOnPhone(text: string) {
     if (channelRef.current?.readyState === 'open') {
       channelRef.current.send(JSON.stringify({ type: 'speak', text }));
@@ -174,6 +186,8 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
       <p className="text-xs text-slate-400">Pair your phone to use its camera as YOMA's video source and its speaker for spoken greetings and instructions. Video is sent peer-to-peer; it is not uploaded to the ASTRAMED server.</p>
       {status === 'idle' || status === 'error' ? (
         <button type="button" onClick={createPairing} className="px-3 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-semibold flex items-center gap-2"><QrCode className="w-4 h-4" /> Generate secure QR pairing</button>
+      ) : status === 'preparing' ? (
+        <div className="flex items-center gap-2 text-xs text-cyan-200"><Link2 className="w-4 h-4 animate-pulse" /> Preparing secure connection. The QR code will appear when the computer is ready…</div>
       ) : (
         <div className="flex flex-wrap gap-3 items-start">
           <div className="bg-white p-2 rounded-lg">
