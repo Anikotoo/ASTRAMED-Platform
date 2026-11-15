@@ -32,20 +32,23 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
   const [selectedMuscle, setSelectedMuscle] = useState<string>('quadriceps');
 
   const activeCrew = selectedCrew || crewList[0];
+  if (!activeCrew) {
+    return <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-8 text-center"><Activity className="w-8 h-8 text-slate-500 mx-auto mb-3" /><h2 className="text-base font-bold text-white">No astronaut profile available</h2><p className="text-xs text-slate-400 mt-2">No crew profile or verified health reading has been added yet. Import a verified dataset or add a real crew profile before viewing personal telemetry.</p></div>;
+  }
   const crewReadings = readings.filter(r => r.crewId === activeCrew?.id);
 
   // Helper to extract latest value
-  const getLatest = (param: string, fallback: number | string = '--') => {
+  const getLatest = (param: string): number | string => {
     const r = crewReadings.find(item => item.parameter === param);
-    return r ? r.value : fallback;
+    return r ? r.value : '--';
   };
 
-  const hrLatest = getLatest('heart_rate', activeCrew?.baseline.restingHeartRate || 60);
-  const sysLatest = getLatest('blood_pressure_sys', activeCrew?.baseline.bloodPressureSys || 120);
-  const quadLatest = getLatest('muscle_strength_quad', 92);
-  const sleepLatest = getLatest('sleep_duration', 7.0);
-  const spo2Latest = getLatest('spo2', 98);
-  const weightLatest = getLatest('body_weight', activeCrew?.baseline.weightKg || 70);
+  const hrLatest = getLatest('heart_rate');
+  const sysLatest = getLatest('blood_pressure_sys');
+  const quadLatest = getLatest('muscle_strength_quad');
+  const sleepLatest = getLatest('sleep_duration');
+  const spo2Latest = getLatest('spo2');
+  const weightLatest = getLatest('body_weight');
 
   return (
     <div className="space-y-6">
@@ -120,7 +123,7 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
               </div>
               <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
                 <span className="text-[10px] text-slate-400">VO2 Max</span>
-                <div className="font-bold text-slate-200">{activeCrew?.baseline.vo2Max} mL/kg</div>
+                <div className="font-bold text-slate-200">— mL/kg</div>
               </div>
             </div>
           </div>
@@ -143,7 +146,7 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
                     {hrLatest} <span className="text-xs text-slate-400">bpm</span>
                   </div>
                   <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                    Baseline: {activeCrew?.baseline.restingHeartRate} bpm
+                    Profile baseline: {activeCrew?.baseline?.restingHeartRate ?? 'Not supplied'} bpm
                   </div>
                 </div>
 
@@ -153,7 +156,7 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
                     {sysLatest} <span className="text-xs text-slate-400">mmHg</span>
                   </div>
                   <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                    Baseline: {activeCrew?.baseline.bloodPressureSys} mmHg
+                    Profile baseline: {activeCrew?.baseline?.bloodPressureSys ?? 'Not supplied'} mmHg
                   </div>
                 </div>
               </div>
@@ -182,7 +185,7 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
                 <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
                   <div className="text-[10px] font-mono text-slate-400">Bone Mineral Density</div>
                   <div className="text-lg font-bold font-mono text-white mt-0.5">
-                    {activeCrew?.baseline.boneDensityTScore} <span className="text-xs text-slate-400">T-Score</span>
+                    — <span className="text-xs text-slate-400">T-Score</span>
                   </div>
                   <div className="text-[10px] text-slate-500 font-mono mt-0.5">
                     DEXA scan at Femoral Neck
