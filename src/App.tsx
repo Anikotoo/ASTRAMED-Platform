@@ -226,6 +226,8 @@ export default function App() {
     setActiveSection('ai_assistant');
   };
 
+  if (window.location.pathname === '/phone-companion') return <PhoneCompanion />;
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans select-none">
       {!isLoadingInitial && showWearableStartGate && (
@@ -353,7 +355,10 @@ export default function App() {
               )}
 
               {activeSection === 'yoma' && (
-                <YomaMovement assessments={movementAssessments} crewList={crewList} onRefresh={fetchData} />
+                <div className="space-y-4">
+                  <PhonePairingPanel onCameraStream={setPhoneCameraStream} onSpeakReady={speak => setPhoneSpeak(() => speak)} />
+                  <YomaMovement assessments={movementAssessments} crewList={crewList} onRefresh={fetchData} externalCameraStream={phoneCameraStream} onPhoneSpeak={text => phoneSpeak?.(text) || false} />
+                </div>
               )}
 
               {activeSection === 'settings' && (
