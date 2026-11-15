@@ -38,6 +38,7 @@ export default function App() {
   const [movementAssessments, setMovementAssessments] = useState<MovementAssessment[]>([]);
   const [settings, setSettings] = useState<MissionSettings>(DEFAULT_MISSION_SETTINGS);
   const [isGeminiActive, setIsGeminiActive] = useState<boolean>(false);
+  const [sensorIngestConfigured, setSensorIngestConfigured] = useState<boolean>(false);
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
 
   // Modals state
@@ -117,6 +118,7 @@ export default function App() {
       if (healthRes.ok) {
         const healthData = await healthRes.json();
         setIsGeminiActive(Boolean(healthData.geminiConfigured));
+        setSensorIngestConfigured(Boolean(healthData.sensorIngestConfigured));
       }
     } catch (err) {
       console.error('Error fetching ASTRAMED data:', err);
@@ -339,6 +341,7 @@ export default function App() {
                   settings={settings}
                   onUpdateSettings={handleUpdateSettings}
                   isGeminiActive={isGeminiActive}
+                  sensorIngestConfigured={sensorIngestConfigured}
                 />
               )}
             </>
