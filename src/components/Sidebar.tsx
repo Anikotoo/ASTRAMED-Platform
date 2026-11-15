@@ -10,7 +10,8 @@ import {
   Settings, 
   ShieldCheck,
   Rocket,
-  ScanLine
+  ScanLine,
+  UserPlus
 } from 'lucide-react';
 
 export type NavSection = 
@@ -22,7 +23,8 @@ export type NavSection =
   | 'importer' 
   | 'enter_readings' 
   | 'settings'
-  | 'yoma';
+  | 'yoma'
+  | 'crew_profiles';
 
 interface SidebarProps {
   activeSection: NavSection;
@@ -44,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'crew_body', label: 'Crew & Body Monitor', icon: UserCheck },
     { id: 'trends', label: 'Health Trends', icon: LineChart },
     { id: 'yoma', label: 'YOMA Mobility Test', icon: ScanLine },
+    { id: 'crew_profiles', label: 'Crew Profiles', icon: UserPlus },
     { id: 'ai_assistant', label: 'AI Assistant', icon: Bot },
     { id: 'research', label: 'Research Library', icon: BookOpen },
     { id: 'importer', label: 'Data Importer', icon: UploadCloud },
