@@ -125,7 +125,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({
             </p>
           </div>
 
-          <span className="text-[10px] text-slate-500 font-mono">REAL DATA IMPORT ONLY • NO DEMO RECORDS</span>
+          <span className="text-[10px] text-slate-500 font-mono">USER-PROVIDED IMPORT ONLY • UNVERIFIED UNTIL REVIEWED</span>
         </div>
       </div>
 
