@@ -687,7 +687,7 @@ app.get('/api/osdr/search', async (req: Request, res: Response) => {
     return;
   }
   try {
-    const params = new URLSearchParams({ term, from: '0', size: '10', type: 'cgene,alsda' });
+    const params = new URLSearchParams({ term, from: '0', size: '10', type: 'cgene' });
     const response = await fetch(`${OSDR_API}/search?${params.toString()}`, {
       headers: { Accept: 'application/json', 'User-Agent': 'ASTRAMED/1.0 NASA-OSDR-research-explorer' },
       signal: AbortSignal.timeout(20000)
