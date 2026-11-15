@@ -24,10 +24,10 @@ export const EnterReadings: React.FC<EnterReadingsProps> = ({
   selectedCrew,
   onReadingAdded
 }) => {
-  const [crewId, setCrewId] = useState<string>(selectedCrew?.id || crewList[0]?.id || 'crew-01');
+  const [crewId, setCrewId] = useState<string>(selectedCrew?.id || crewList[0]?.id || '');
   const [category, setCategory] = useState<HealthCategory>('cardiovascular');
   const [parameter, setParameter] = useState<HealthParameter>('heart_rate');
-  const [value, setValue] = useState<string>('72');
+  const [value, setValue] = useState<string>('');
   const [unit, setUnit] = useState<string>('bpm');
   const [timestamp, setTimestamp] = useState<string>(new Date().toISOString().slice(0, 16));
   const [source, setSource] = useState<DataSource>('manual_entry');
@@ -128,7 +128,7 @@ export const EnterReadings: React.FC<EnterReadingsProps> = ({
           Enter Astronaut Health Reading
         </h1>
         <p className="text-xs text-slate-400 mt-0.5">
-          Log verified clinical examinations, exercise ergometry parameters, and countermeasure metrics into persistent mission storage.
+          Record an actual measurement and identify its source. Manual entries are not automatically verified sensor telemetry.
         </p>
       </div>
 
@@ -196,7 +196,7 @@ export const EnterReadings: React.FC<EnterReadingsProps> = ({
               step="any"
               value={value}
               onChange={e => setValue(e.target.value)}
-              placeholder="e.g. 72"
+              placeholder="Enter the actual measured value"
               required
               className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono text-white outline-none focus:border-cyan-500"
             />
