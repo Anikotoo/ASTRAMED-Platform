@@ -101,7 +101,7 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
       };
       channel.onclose = () => {
         onNeckbandStateSender?.(null);
-        if (pcRef.current === pc && pc.connectionState !== 'closed' && pc.connectionState !== 'failed') setStatus('waiting');
+        if (pc && pcRef.current === pc && pc.connectionState !== 'closed' && pc.connectionState !== 'failed') setStatus('waiting');
       };
       pc.ontrack = event => {
         const stream = event.streams[0] || new MediaStream([event.track]);
