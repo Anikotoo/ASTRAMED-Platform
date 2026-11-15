@@ -301,7 +301,8 @@ function summarizeReadings(readings: HealthReading[]) {
       minimumInIncludedRecords: values.length ? Math.min(...values) : null,
       maximumInIncludedRecords: values.length ? Math.max(...values) : null,
       changeFromEarliestIncludedRecord: delta,
-      measurementSources: Array.from(new Set(ordered.map(item => item.source).filter(Boolean)))
+      measurementSources: Array.from(new Set(ordered.map(item => item.source).filter(Boolean)),
+      verificationStatuses: Array.from(new Set(ordered.map(item => item.status || 'unverified'))))
     };
   });
 }
@@ -1354,7 +1355,7 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
       '11. Use recent conversation history to resolve follow-ups, but never treat prior assistant text as new telemetry.',
       '12. Ask one clarification if the crew member or measurement is ambiguous.',
       '13. Separate measured readings, crew baseline, derived summaries, alert-engine outputs and general scientific knowledge.',
-      '14. Never claim a trend from one measurement; state record count and time span used.',
+      '14. Never claim a trend from one measurement; state record count and time span used. If included records are unverified, describe any pattern only as provisional/exploratory and do not present it as a verified sensor trend.',
       '15. Cite only IDs in SOURCE REGISTER using [D1], [D2], [D3] or [R1]. Never invent papers, DOI values, authors, URLs or citations.',
       '16. A Research Library record is not proof that the full paper was reviewed. Distinguish abstract/metadata from the full publication.',
       '17. Without a supplied research source, label scientific claims as general background and do not attach a fabricated citation.',
