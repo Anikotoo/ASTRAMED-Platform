@@ -135,7 +135,7 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
               <div className="flex items-center justify-between text-xs font-mono mb-2 text-cyan-400">
                 <span className="font-bold flex items-center gap-1.5">
                   <Heart className="w-3.5 h-3.5 text-rose-400" />
-                  CARDIOVASCULAR TELEMETRY
+                  CARDIOVASCULAR READINGS
                 </span>
                 <span className="text-[10px] text-slate-400">Recorded readings</span>
               </div>
@@ -167,9 +167,9 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
               <div className="flex items-center justify-between text-xs font-mono mb-2 text-cyan-400">
                 <span className="font-bold flex items-center gap-1.5">
                   <Dumbbell className="w-3.5 h-3.5 text-cyan-400" />
-                  MUSCULOSKELETAL & BONE INTEGRITY
+                  MUSCULOSKELETAL & BONE READINGS
                 </span>
-                <span className="text-[10px] text-slate-400">aRED Test Cycle</span>
+                <span className="text-[10px] text-slate-400">Recorded readings</span>
               </div>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
@@ -199,9 +199,9 @@ export const CrewBodyMonitor: React.FC<CrewBodyMonitorProps> = ({
               <div className="flex items-center justify-between text-xs font-mono mb-2 text-cyan-400">
                 <span className="font-bold flex items-center gap-1.5">
                   <Moon className="w-3.5 h-3.5 text-indigo-400" />
-                  SLEEP & METABOLIC SURVEILLANCE
+                  SLEEP & GENERAL HEALTH
                 </span>
-                <span className="text-[10px] text-slate-400">Actigraphy</span>
+                <span className="text-[10px] text-slate-400">Recorded readings</span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800 text-center">
