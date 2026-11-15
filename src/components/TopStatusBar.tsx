@@ -72,7 +72,7 @@ export const TopStatusBar: React.FC<TopStatusBarProps> = ({
   const attentionAlertCount = alerts.filter(a => a.severity === 'attention').length;
 
   return (
-    <header className="h-16 bg-slate-950/90 border-b border-slate-800/80 px-4 flex items-center justify-between text-xs font-mono text-slate-300 z-30 sticky top-0 backdrop-blur-md">
+    <header className="min-h-16 bg-slate-950/90 border-b border-slate-800/80 px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-y-2 text-xs font-mono text-slate-300 z-30 sticky top-0 backdrop-blur-md">
       {/* Mission & MET */}
       <div className="flex items-center gap-3">
         {onToggleMobileNav && (
@@ -87,7 +87,7 @@ export const TopStatusBar: React.FC<TopStatusBarProps> = ({
 
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-none"></span>
-          <span className="font-bold text-white text-sm tracking-wide">{missionName}</span>
+          <span className="font-bold text-white text-xs sm:text-sm tracking-wide max-w-[42vw] sm:max-w-none truncate">{missionName}</span>
           <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-cyan-300 border border-slate-700">MISSION STATUS</span>
         </div>
 
@@ -148,12 +148,12 @@ export const TopStatusBar: React.FC<TopStatusBarProps> = ({
         <div className="relative">
           <button
             onClick={() => setIsCrewMenuOpen(!isCrewMenuOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-cyan-500/60 transition-colors text-white cursor-pointer"
+            className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-cyan-500/60 transition-colors text-white cursor-pointer max-w-[42vw] sm:max-w-none"
           >
             <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-[10px] font-bold text-white uppercase">
               {selectedCrew?.name.charAt(0) || 'A'}
             </div>
-            <span className="font-semibold text-xs truncate max-w-[110px]">{selectedCrew?.name || 'Select Crew'}</span>
+            <span className="font-semibold text-xs truncate max-w-[24vw] sm:max-w-[110px]">{selectedCrew?.name || 'Select Crew'}</span>
             <ChevronDown className="w-3 h-3 text-slate-400" />
           </button>
 
