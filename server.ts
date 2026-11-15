@@ -312,6 +312,8 @@ function formatReading(reading: HealthReading): string {
     `${reading.parameter}: ${reading.value} ${reading.unit || ''}`.trim(),
     `Time: ${reading.timestamp || 'Timestamp unavailable'}`,
     `Source: ${reading.source || 'Unknown'}`,
+    reading.reportedSource ? `Uploaded source claim: ${reading.reportedSource}` : '',
+    reading.deviceId ? `Device: ${reading.deviceId} (${reading.sensorType || 'sensor type unavailable'})` : '',
     `Status: ${reading.status || 'Not classified'}`
   ].join(' | ');
 }
@@ -375,6 +377,8 @@ function getAlerts(db: AstramedDatabase) {
 // GEMINI CONFIGURATION â€” OPTIONAL
 // ============================================================
 
+const SENSOR_INGEST_TOKEN = (process.env.ASTRAMED_SENSOR_INGEST_TOKEN || '').trim();
+
 const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || '').trim();
 const hasOpenRouterKey = Boolean(
   OPENROUTER_API_KEY &&
@@ -409,6 +413,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
     status: 'ok',
     version: '2.3.0',
     movementAssessmentsEnabled: true,
+    sensorIngestConfigured: Boolean(SENSOR_INGEST_TOKEN),
     poseInference: 'client-side-yolo-pose',
     openrouterConfigured: hasOpenRouterKey,
     geminiConfigured: hasGeminiKey,
@@ -528,8 +533,9 @@ app.post('/api/readings', (req: Request, res: Response) => {
     ...reading,
     id: reading.id || `rd_user_${Date.now()}`,
     timestamp: reading.timestamp || new Date().toISOString(),
-    source: reading.source || 'manual_entry',
-    status: reading.status || 'normal',
+    source: 'manual_entry',
+    reportedSource: safeText(reading.source, 80) || undefined,
+    status: 'unverified',
     isBuiltIn: false
   };
 
@@ -561,6 +567,85 @@ app.post('/api/readings', (req: Request, res: Response) => {
   }
 
   res.status(201).json(newReading);
+});
+
+// ============================================================
+// AUTHENTICATED SENSOR GATEWAY INGESTION
+// ============================================================
+
+app.post('/api/sensors/ingest', (req: Request, res: Response) => {
+  if (!SENSOR_INGEST_TOKEN) {
+    res.status(503).json({ error: 'Sensor ingestion is disabled until ASTRAMED_SENSOR_INGEST_TOKEN is configured.' });
+    return;
+  }
+  const authorization = String(req.headers.authorization || '');
+  if (authorization !== `Bearer ${SENSOR_INGEST_TOKEN}`) {
+    res.status(401).json({ error: 'Invalid sensor gateway credentials.' });
+    return;
+  }
+
+  const body = req.body || {};
+  const crewId = safeText(body.crewId, 120);
+  const deviceId = safeText(body.deviceId, 160);
+  const sensorType = safeText(body.sensorType, 120);
+  const parameter = safeText(body.parameter, 100);
+  const unit = safeText(body.unit, 40);
+  const value = Number(body.value);
+  const timestamp = safeText(body.timestamp, 80);
+  const confidence = Number(body.qualityConfidence);
+  const source = body.source === 'wearable_sensor' ? 'wearable_sensor' : 'sensor_gateway';
+
+  if (!crewId || !deviceId || !sensorType || !parameter || !unit || !Number.isFinite(value) || !Number.isFinite(Date.parse(timestamp))) {
+    res.status(400).json({ error: 'crewId, deviceId, sensorType, parameter, numeric value, unit, and ISO timestamp are required.' });
+    return;
+  }
+  if (!Number.isFinite(confidence) || confidence < 0.5 || confidence > 1) {
+    res.status(422).json({ error: 'Sensor qualityConfidence must be between 0.5 and 1.0. Low-quality readings are rejected.' });
+    return;
+  }
+  if (body.simulated === true) {
+    res.status(422).json({ error: 'Simulated data cannot enter the live sensor gateway.' });
+    return;
+  }
+
+  const db = readDb();
+  if (!db.crew.some((member: any) => member.id === crewId)) {
+    res.status(404).json({ error: 'Crew profile not found. Create the profile before linking a sensor.' });
+    return;
+  }
+  const reading: HealthReading = {
+    id: `sensor_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    crewId,
+    category: safeText(body.category, 40) as HealthReading['category'],
+    parameter: parameter as HealthReading['parameter'],
+    value,
+    unit,
+    timestamp: new Date(timestamp).toISOString(),
+    source,
+    deviceId,
+    sensorType,
+    qualityConfidence: confidence,
+    measurementMethod: safeText(body.measurementMethod, 160) || 'Connected medical sensor',
+    status: 'unverified',
+    notes: safeText(body.notes, 1000) || undefined,
+    isBuiltIn: false
+  };
+  db.readings.push(reading);
+  db.events.unshift({
+    id: `ev_${Date.now()}`,
+    crewId,
+    type: 'reading',
+    title: `Sensor reading received: ${parameter.replace(/_/g, ' ')}`,
+    description: `Received from device ${deviceId} (${sensorType}); quality confidence ${confidence.toFixed(2)}. Clinical interpretation pending.`,
+    timestamp: reading.timestamp,
+    severity: 'normal',
+    source
+  });
+  if (!writeDb(db)) {
+    res.status(500).json({ error: 'Could not persist sensor reading.' });
+    return;
+  }
+  res.status(201).json(reading);
 });
 
 // ============================================================
@@ -619,6 +704,9 @@ app.post('/api/import', (req: Request, res: Response) => {
     ...reading,
     id: `imp_${Date.now()}_${index}`,
     datasetId,
+    reportedSource: safeText(reading.source, 80) || undefined,
+    source: 'user_import' as const,
+    status: 'unverified' as const,
     isBuiltIn: false
   }));
 
