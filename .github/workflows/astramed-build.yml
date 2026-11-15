@@ -2,7 +2,7 @@ name: ASTRAMED build validation
 
 on:
   push:
-    branches: [main, 'stabilization/**']
+    branches: [main, 'stabilization/**', 'feature/**']
   pull_request:
     branches: [main]
 
