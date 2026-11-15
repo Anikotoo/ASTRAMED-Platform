@@ -99,10 +99,13 @@ app.post('/api/phone-pairing/:pairId/offer', (req: Request, res: Response) => {
 app.post('/api/phone-pairing/:pairId/join', (req: Request, res: Response) => {
   const pair = getPair(req, res); if (!pair) return;
   if (pair.phoneToken) return res.status(409).json({ error: 'This pairing session has already been used.' });
-  pair.pinAttempts += 1;
-  if (pair.pinAttempts > 8) { phonePairSessions.delete(pair.id); return res.status(429).json({ error: 'Too many incorrect PIN attempts. Start a new pairing.' }); }
   const submittedPin = String(req.body?.pin || '');
-  if (!/^\d{6}$/.test(submittedPin) || !tokenMatches(submittedPin, pair.pin)) return res.status(401).json({ error: 'Incorrect pairing PIN.' });
+  if (!/^\d{6}$/.test(submittedPin) || !tokenMatches(submittedPin, pair.pin)) {
+    pair.pinAttempts += 1;
+    if (pair.pinAttempts >= 8) { phonePairSessions.delete(pair.id); return res.status(429).json({ error: 'Too many incorrect PIN attempts. Start a new pairing.' }); }
+    return res.status(401).json({ error: 'Incorrect pairing PIN.' });
+  }
+  // A valid PIN waiting for the host offer is not a failed PIN attempt.
   if (!pair.offer) return res.status(409).json({ error: 'The computer is not ready yet. Try again in a moment.' });
   pair.phoneToken = randomToken();
   res.json({ phoneToken: pair.phoneToken, offer: pair.offer, expiresAt: new Date(pair.expiresAt).toISOString() });

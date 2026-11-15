@@ -21,6 +21,7 @@ export const PhoneCompanion: React.FC = () => {
   const [speakerEnabled, setSpeakerEnabled] = useState(false);
   const [neckbandState, setNeckbandState] = useState<any>(null);
   const speakerEnabledRef = useRef(false);
+  const connectLockRef = useRef(false);
 
   function cleanup() {
     pcRef.current?.close();
@@ -32,18 +33,44 @@ export const PhoneCompanion: React.FC = () => {
   useEffect(() => () => cleanup(), []);
 
   async function connect() {
-    if (!pairId) { setStatus('error'); setMessage('This pairing link is missing its temporary session ID. Scan a fresh QR code.'); return; }
-    if (!/^\d{6}$/.test(pin)) { setStatus('error'); setMessage('Enter the six-digit PIN shown on the computer.'); return; }
-    setStatus('connecting'); setMessage('Requesting camera permission and connecting securely…');
+    if (connectLockRef.current || status === 'connected') return;
+    connectLockRef.current = true;
+    if (!pairId) { setStatus('error'); setMessage('This pairing link is missing its temporary session ID. Scan a fresh QR code.'); connectLockRef.current = false; return; }
+    if (!/^\d{6}$/.test(pin)) { setStatus('error'); setMessage('Enter the six-digit PIN shown on the computer.'); connectLockRef.current = false; return; }
+    setStatus('connecting'); setMessage('Requesting camera permission…');
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera access requires HTTPS and a supported browser.');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'user' }, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+      } catch (cameraError: any) {
+        if (cameraError?.name === 'OverconstrainedError' || cameraError?.name === 'NotFoundError') stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        else throw cameraError;
+      }
       streamRef.current = stream;
-      if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
-
-      const joined = await json(await fetch(`/api/phone-pairing/${encodeURIComponent(pairId)}/join`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin })
-      }));
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        // Preview autoplay is best-effort; it must not block the actual WebRTC connection.
+        void videoRef.current.play().catch(() => setMessage('Camera permission granted. Establishing secure phone connection…'));
+      }
+      setMessage('Camera ready. Approving the secure pairing…');
+      let joined: any;
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const response = await fetch(`/api/phone-pairing/${encodeURIComponent(pairId)}/join`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin })
+        });
+        if (response.status === 409) {
+          const payload = await response.json().catch(() => ({}));
+          if (/computer is not ready yet/i.test(String(payload.error || '')) && attempt < 9) {
+            await new Promise(resolve => window.setTimeout(resolve, 600));
+            continue;
+          }
+          throw new Error(payload.error || 'This pairing session cannot be used. Generate a fresh QR code.');
+        }
+        joined = await json(response);
+        break;
+      }
+      if (!joined) throw new Error('The computer did not finish preparing the pairing. Generate a fresh QR code and try again.');
       setPhoneToken(joined.phoneToken);
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
@@ -52,10 +79,7 @@ export const PhoneCompanion: React.FC = () => {
         event.channel.onmessage = messageEvent => {
           try {
             const command = JSON.parse(messageEvent.data);
-            if (command.type === 'neckband-state' && command.state && typeof command.state === 'object') {
-              setNeckbandState(command.state);
-              return;
-            }
+            if (command.type === 'neckband-state' && command.state && typeof command.state === 'object') { setNeckbandState(command.state); return; }
             if (command.type === 'speak' && typeof command.text === 'string' && speakerEnabledRef.current && 'speechSynthesis' in window) {
               window.speechSynthesis.cancel();
               window.speechSynthesis.speak(new SpeechSynthesisUtterance(command.text.slice(0, 400)));
@@ -64,37 +88,37 @@ export const PhoneCompanion: React.FC = () => {
         };
       };
       pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'connected') { setStatus('connected'); setMessage('Connected. Keep this page open; your phone camera is feeding YOMA.'); }
-        if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-          setStatus('error'); setMessage('Connection lost. Return to the computer and create a new pairing session.');
-        }
+        if (pc.connectionState === 'connected') {
+          setStatus('connected');
+          setMessage('Connected. Keep this page open; your phone camera is feeding YOMA.');
+        } else if (pc.connectionState === 'failed') {
+          setStatus('error');
+          setMessage('WebRTC connection failed. Try another network or ask the computer to generate a fresh pairing.');
+        } else if (pc.connectionState === 'disconnected') setMessage('Connection interrupted. Trying to reconnect…');
       };
       await pc.setRemoteDescription(joined.offer);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       await new Promise<void>((resolve, reject) => {
         if (pc.iceGatheringState === 'complete') return resolve();
-        const timeout = window.setTimeout(() => reject(new Error('Network setup timed out. Try another network.')), 12000);
+        const timeout = window.setTimeout(() => reject(new Error('Network setup timed out. Try another network and generate a fresh pairing.')), 20000);
         const check = () => {
-          if (pc.iceGatheringState === 'complete') {
-            window.clearTimeout(timeout);
-            pc.removeEventListener('icegatheringstatechange', check);
-            resolve();
-          }
+          if (pc.iceGatheringState === 'complete') { window.clearTimeout(timeout); pc.removeEventListener('icegatheringstatechange', check); resolve(); }
         };
         pc.addEventListener('icegatheringstatechange', check);
+        check();
       });
       await json(await fetch(`/api/phone-pairing/${encodeURIComponent(pairId)}/answer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${joined.phoneToken}` },
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${joined.phoneToken}` },
         body: JSON.stringify({ sdp: pc.localDescription })
       }));
-      setMessage('WebRTC answer sent. Waiting for the computer to finish connecting…');
+      setMessage('Secure answer sent. Waiting for the computer to finish connecting…');
     } catch (error: any) {
       cleanup(); setStatus('error'); setMessage(error.message || 'Could not connect this phone.');
+    } finally {
+      connectLockRef.current = false;
     }
   }
-
   function enableSpeaker() {
     speakerEnabledRef.current = true;
     setSpeakerEnabled(true);
