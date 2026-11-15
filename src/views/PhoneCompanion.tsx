@@ -15,6 +15,18 @@ export const PhoneCompanion: React.FC = () => {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const [pin, setPin] = useState('');
   const [pairId] = useState(() => new URLSearchParams(window.location.search).get('pair') || '');
+  const [joinClientId] = useState(() => {
+    const key = `astramed-phone-pair-client:${new URLSearchParams(window.location.search).get('pair') || 'unknown'}`;
+    try {
+      const existing = window.sessionStorage.getItem(key);
+      if (existing) return existing;
+      const created = window.crypto.randomUUID();
+      window.sessionStorage.setItem(key, created);
+      return created;
+    } catch {
+      return window.crypto.randomUUID();
+    }
+  });
   const [phoneToken, setPhoneToken] = useState('');
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [message, setMessage] = useState('Connect this phone to provide YOMA camera video and spoken guidance.');
@@ -57,7 +69,7 @@ export const PhoneCompanion: React.FC = () => {
       let joined: any;
       for (let attempt = 0; attempt < 10; attempt++) {
         const response = await fetch(`/api/phone-pairing/${encodeURIComponent(pairId)}/join`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin })
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin, clientId: joinClientId })
         });
         if (response.status === 409) {
           const payload = await response.json().catch(() => ({}));
