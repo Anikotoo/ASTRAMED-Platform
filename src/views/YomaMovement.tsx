@@ -211,7 +211,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
   }
 
   async function startAssessment() {
-    if (!navigator.mediaDevices?.getUserMedia) {
+    if (!externalStreamRef.current && !navigator.mediaDevices?.getUserMedia) {
       setStatus('error'); setMessage('Camera access is unavailable. Open ASTRAMED over HTTPS or localhost in a supported browser.'); return;
     }
     if (!subjectId.trim()) { setStatus('error'); setMessage('Enter an anonymous subject ID before starting.'); return; }
