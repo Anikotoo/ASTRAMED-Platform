@@ -19,6 +19,7 @@ export const PhoneCompanion: React.FC = () => {
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [message, setMessage] = useState('Connect this phone to provide YOMA camera video and spoken guidance.');
   const [speakerEnabled, setSpeakerEnabled] = useState(false);
+  const speakerEnabledRef = useRef(false);
 
   function cleanup() {
     pcRef.current?.close();
@@ -50,7 +51,7 @@ export const PhoneCompanion: React.FC = () => {
         event.channel.onmessage = messageEvent => {
           try {
             const command = JSON.parse(messageEvent.data);
-            if (command.type === 'speak' && typeof command.text === 'string' && speakerEnabled && 'speechSynthesis' in window) {
+            if (command.type === 'speak' && typeof command.text === 'string' && speakerEnabledRef.current && 'speechSynthesis' in window) {
               window.speechSynthesis.cancel();
               window.speechSynthesis.speak(new SpeechSynthesisUtterance(command.text.slice(0, 400)));
             }
@@ -90,6 +91,7 @@ export const PhoneCompanion: React.FC = () => {
   }
 
   function enableSpeaker() {
+    speakerEnabledRef.current = true;
     setSpeakerEnabled(true);
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
