@@ -141,7 +141,7 @@ export const WearableStartGate: React.FC<WearableStartGateProps> = ({ onConnect,
               {voiceState === 'speaking' ? 'MRS. SPACE IS SPEAKING' : voiceState === 'unavailable' ? 'VOICE NOT AVAILABLE · TEXT INTRO CONTINUES' : 'INITIALIZING MISSION GUIDE'}
             </div>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <button onClick={speakGreeting} className="rounded-full border border-cyan-800 bg-cyan-950/50 px-4 py-2 text-xs text-cyan-200 hover:bg-cyan-900/70"><Volume2 className="mr-2 inline h-3.5 w-3.5" /> Play voice</button>
+              <button onClick={speakGreeting} className="rounded-full border border-cyan-800 bg-cyan-950/50 px-4 py-2 text-xs text-cyan-200 hover:bg-cyan-900/70"><Volume2 className="mr-2 inline h-3.5 w-3.5" /> Enable sound + replay voice</button>
               <button onClick={() => { setVisibleWords(words.length); setIntroComplete(true); }} className="rounded-full border border-slate-700 px-4 py-2 text-xs text-slate-400 hover:border-cyan-700 hover:text-cyan-200">Skip intro</button>
             </div>
           </motion.div>
