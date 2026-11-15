@@ -26,24 +26,31 @@ function readField(record: Record<string, unknown>, aliases: string[]): unknown 
 function collectOsdrRecords(payload: unknown): Record<string, unknown>[] {
   const found: Record<string, unknown>[] = [];
   const seen = new Set<object>();
-  const visit = (value: unknown, depth = 0) => {
+  const visit = (value: unknown, depth = 0, inheritedAccession = '') => {
     if (!value || typeof value !== 'object' || depth > 8 || seen.has(value as object)) return;
     seen.add(value as object);
     if (Array.isArray(value)) {
-      value.forEach(item => visit(item, depth + 1));
+      value.forEach(item => visit(item, depth + 1, inheritedAccession));
       return;
     }
     const record = value as Record<string, unknown>;
+    const directAccession = Object.keys(record).find(key => /^OSD-?\\d+(?:\\.\\d+)?$/i.test(key));
+    const accession = directAccession || inheritedAccession;
     const hasTitle = readField(record, ['Study Title', 'title', 'study_title']) !== undefined;
-    const hasId = readField(record, ['Accession', 'Study Identifier', 'osdId', 'id']) !== undefined ||
-      Object.keys(record).some(key => /^OSD-\d+/i.test(key));
-    if (hasTitle && hasId) found.push(record);
-    Object.values(record).forEach(item => visit(item, depth + 1));
+    const hasId = readField(record, ['Accession', 'Study Identifier', 'osdId', 'id']) !== undefined || Boolean(accession);
+    if (hasTitle && hasId) {
+      found.push(accession && !readField(record, ['Accession', 'Study Identifier', 'osdId', 'id'])
+        ? { ...record, Accession: accession }
+        : record);
+    }
+    for (const [key, child] of Object.entries(record)) {
+      const childAccession = /^OSD-?\\d+(?:\\.\\d+)?$/i.test(key) ? key : accession;
+      visit(child, depth + 1, childAccession);
+    }
   };
   visit(payload);
   return found;
 }
-
 function classifyCategory(title: string, abstract: string): ResearchStudy['category'] {
   const text = `${title} ${abstract}`.toLowerCase();
   if (/cardio|heart|vascular|blood pressure/.test(text)) return 'Cardiovascular Health';
