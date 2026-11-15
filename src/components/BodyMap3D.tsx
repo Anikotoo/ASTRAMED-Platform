@@ -56,7 +56,7 @@ export const BodyMap3D: React.FC<BodyMap3DProps> = ({
     r.parameter === currentMuscle?.crewMetricKey
   );
   const latestReading = muscleReadings[0];
-  const deltaValue = latestReading ? (latestReading.value - 100) : -8.5; // fallback delta if baseline 100%
+  const deltaValue = latestReading ? (latestReading.value - 100) : null;
 
   // Function to highlight muscle meshes
   const updateHighlights = useCallback((activeId: string | null, hoveredId: string | null) => {
@@ -705,10 +705,12 @@ export const BodyMap3D: React.FC<BodyMap3DProps> = ({
                   <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-800">
                     <div className="flex items-center justify-between text-[11px] font-mono mb-1">
                       <strong className="text-white">{currentMuscle.name}</strong>
-                      <span className={`font-bold flex items-center gap-1 ${deltaValue < -5 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                        <TrendingDown className="w-3.5 h-3.5" />
-                        {deltaValue > 0 ? `+${deltaValue.toFixed(1)}%` : `${deltaValue.toFixed(1)}%`}
-                      </span>
+                      {deltaValue === null ? <span className="text-slate-500 text-[10px]">NO MEASUREMENT</span> : (
+                        <span className={`font-bold flex items-center gap-1 ${deltaValue < -5 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          <TrendingDown className="w-3.5 h-3.5" />
+                          {deltaValue > 0 ? `+${deltaValue.toFixed(1)}%` : `${deltaValue.toFixed(1)}%`}
+                        </span>
+                      )}
                     </div>
                     <div className="text-[10px] text-slate-300 line-clamp-2">
                       {currentMuscle.microgravityImpact}
