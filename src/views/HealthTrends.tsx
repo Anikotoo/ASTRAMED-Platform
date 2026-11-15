@@ -28,6 +28,8 @@ export const HealthTrends: React.FC<HealthTrendsProps> = ({
   readings
 }) => {
   const activeCrew = selectedCrew || crewList[0];
+  if (!activeCrew) return <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-8 text-center text-xs text-slate-400">No crew profile is available. Add a real or anonymised crew profile before viewing health trends.</div>;
+  const unverifiedCount = readings.filter(reading => reading.crewId === activeCrew.id && reading.status === 'unverified').length;
   const [selectedParam, setSelectedParam] = useState<HealthParameter>('heart_rate');
   const [timeRangeDays, setTimeRangeDays] = useState<number>(0);
   const [compareCrewId, setCompareCrewId] = useState<string | null>(null);
@@ -143,6 +145,8 @@ export const HealthTrends: React.FC<HealthTrendsProps> = ({
 
   return (
     <div className="space-y-6">
+      {unverifiedCount > 0 && <div className="p-3 rounded-lg border border-amber-800/70 bg-amber-950/30 text-[11px] text-amber-200">This view includes {unverifiedCount} unverified manual/imported reading(s). They are shown for inspection only and are excluded from automatic alerts; do not interpret them as authenticated sensor telemetry.</div>}
+
       {/* Top Filter Bar */}
       <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4">
         {/* Metric Selector */}
@@ -221,7 +225,7 @@ export const HealthTrends: React.FC<HealthTrendsProps> = ({
         <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
           <div>
             <div className="text-[10px] font-mono uppercase text-cyan-400 tracking-wider">
-              Telemetry Trend Visualization
+              Recorded Health Trend Visualization
             </div>
             <h2 className="text-base font-bold text-white capitalize mt-0.5">
               {selectedParam.replace(/_/g, ' ')} ({unit})
