@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { 
   CrewMember, 
   HealthReading, 
@@ -263,15 +264,22 @@ export default function App() {
         />
 
         {/* View Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 min-h-0 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/60">
+        <main className="astramed-workspace flex-1 overflow-y-auto p-6 min-h-0 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/60">
           {isLoadingInitial ? (
             <div className="h-full flex flex-col items-center justify-center space-y-3 text-cyan-400 font-mono text-xs">
               <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
               <div>SYNCHRONIZING ASTRAMED TELEMETRY STREAM...</div>
             </div>
           ) : (
-            <>
-
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={activeSection}
+                className="min-h-full"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              >
               {activeSection === 'overview' && (
                 <MissionOverview
                   crewList={crewList}
@@ -361,7 +369,8 @@ export default function App() {
                   sensorIngestConfigured={sensorIngestConfigured}
                 />
               )}
-            </>
+              </motion.div>
+            </AnimatePresence>
           )}
         </main>
       </div>
