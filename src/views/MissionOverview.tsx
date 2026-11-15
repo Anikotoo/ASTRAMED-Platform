@@ -74,6 +74,13 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
 
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={() => onNavigate('crew_profiles')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
+          >
+            <Users className="w-4 h-4" />
+            <span>Add Crew Profile</span>
+          </button>
+          <button
             onClick={() => onNavigate('enter_readings')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium transition-colors cursor-pointer"
           >
