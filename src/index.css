@@ -15,3 +15,30 @@
 .overview-card:active { transform: translateY(-1px) scale(0.995); }
 @keyframes astramed-rise-in { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
 @media (prefers-reduced-motion: reduce) { .astramed-workspace *, .overview-page *, .overview-reveal, .overview-stagger > *, .overview-card { animation: none !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; transform: none !important; } }
+
+/* Responsive shell and shared component safeguards. Desktop rules remain unchanged. */
+html, body, #root { width: 100%; min-height: 100%; margin: 0; }
+body { overflow-x: hidden; }
+*, *::before, *::after { box-sizing: border-box; }
+.astramed-workspace { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.astramed-workspace > * { min-width: 0; }
+.astramed-workspace img, .astramed-workspace canvas, .astramed-workspace video { max-width: 100%; }
+.astramed-workspace table { display: block; max-width: 100%; overflow-x: auto; }
+.astramed-workspace input, .astramed-workspace select, .astramed-workspace textarea, .astramed-workspace button { max-width: 100%; }
+@media (max-width: 767px) {
+  .astramed-workspace { padding-bottom: calc(5.25rem + env(safe-area-inset-bottom)); }
+  .astramed-workspace h1 { overflow-wrap: anywhere; }
+  .astramed-workspace [class*="grid-cols-"] { min-width: 0; }
+  .astramed-workspace .overview-page { gap: 1rem; }
+  .astramed-workspace .overview-page > * { min-width: 0; }
+  .astramed-workspace .overview-page button { min-height: 40px; }
+  .astramed-workspace .overview-page .overview-card { min-width: 0; }
+  .astramed-workspace pre { max-width: 100%; overflow-x: auto; }
+  .astramed-workspace canvas { touch-action: pan-y; }
+}
+@media (max-width: 420px) {
+  .astramed-workspace { font-size: 13px; }
+  .astramed-workspace .overview-page .overview-reveal,
+  .astramed-workspace .overview-page .overview-card { border-radius: .75rem; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
