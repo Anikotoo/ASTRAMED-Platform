@@ -9,6 +9,7 @@ ASTRAMED is a prototype for astronaut health decision support. Its monitoring de
 - **Crew registry:** real or anonymised profiles with no invented age, flight history or medical baseline.
 - **Data provenance:** manual readings and uploaded files are marked unverified. Uploaded source labels are retained as claims, not treated as verified provenance.
 - **Sensor gateway:** authenticated API endpoint for compatible wearable or medical sensor integrations.
+- **Virtual smartwatch demo:** a clearly labelled, local-only simulation of changing watch metrics for interface demonstrations. It does not connect over Bluetooth, call the sensor gateway, create health readings, trigger alerts, or feed simulated values into AI/trend analysis.
 - **Research and AI:** the assistant receives the latest 12 chat turns for follow-up context and mission records including baselines, imported datasets, events, alerts and YOMA assessments. NASA OSDR, NASA Life Sciences and Europe PMC are research sources; research records are not live astronaut telemetry.
 
 ## Run locally
