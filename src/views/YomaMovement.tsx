@@ -69,7 +69,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
   const [selectedCameraId, setSelectedCameraId] = useState('');
   const [liveConfidence, setLiveConfidence] = useState(0);
   const [liveAngles, setLiveAngles] = useState({ shoulder: null as number | null, elbow: null as number | null, knee: null as number | null });
-  const [lastSaved, setLastSaved] = useState<MovementAssessment | null>(null);
+  const [lastSaved, setLastSaved] = useState<MovementAssessment | null>(null);\n  const [voiceEnabled, setVoiceEnabled] = useState(false);\n  const lastAnnouncedPhaseRef = useRef<string>('');\n\n  function speakInstruction(text: string) {\n    if (!voiceEnabled || !('speechSynthesis' in window)) return;\n    window.speechSynthesis.cancel();\n    const utterance = new SpeechSynthesisUtterance(text);\n    utterance.rate = 0.92;\n    utterance.onstart = () => undefined;\n    window.speechSynthesis.speak(utterance);\n  }\n\n  useEffect(() => {\n    if (status !== 'running') return;\n    if (lastAnnouncedPhaseRef.current === activePhase.name) return;\n    lastAnnouncedPhaseRef.current = activePhase.name;\n    speakInstruction(activePhase.instruction);\n  }, [activePhase.name, status, voiceEnabled]);\n\n  useEffect(() => {\n    if (status === 'running' && elapsed >= 300) speakInstruction('The five minute movement test is complete. Please review and save the assessment.');\n  }, [elapsed, status, voiceEnabled]);
 
   const activePhase = PHASES.find(phase => elapsed >= phase.start && elapsed < phase.end) || PHASES[PHASES.length - 1];
   const subjectAssessments = assessments.filter(item => item.subjectId === subjectId.trim());
@@ -314,6 +314,20 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-white font-mono">CAMERA FEED &amp; POSE TRACKING</h2>
             <span className="text-[10px] font-mono text-slate-400">{modelDevice ? `INFERENCE: ${modelDevice.toUpperCase()}` : 'MODEL NOT LOADED'}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => {
+              const enabled = !voiceEnabled;
+              setVoiceEnabled(enabled);
+              if (enabled && 'speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance('YOMA voice instructions enabled.');
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+              }
+            }} className={voiceEnabled ? "px-3 py-2 rounded-lg bg-cyan-900/60 border border-cyan-700 text-cyan-200 text-xs" : "px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs"}>
+              {voiceEnabled ? 'Voice instructions: ON' : 'Enable voice instructions'}
+            </button>
+            <span className="text-[10px] text-slate-500">Uses this device's browser speech output. Remote phone-speaker pairing is not implemented yet.</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-[10px] text-slate-400 font-mono">CAMERA INPUT</label>
