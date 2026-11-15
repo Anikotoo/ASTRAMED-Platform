@@ -362,9 +362,9 @@ export default function App() {
                 <CrewProfiles crewList={crewList} onSaved={fetchData} />
               )}
 
-              {activeSection === 'smartwatch' && (
+              <div className={activeSection === 'smartwatch' ? 'block' : 'hidden'}>
                 <VirtualSmartwatch crewList={crewList} selectedCrew={selectedCrew} onDemoStateChange={handleNeckbandStateChange} />
-              )}
+              </div>
 
               {activeSection === 'yoma' && (
                 <div className="space-y-4">
