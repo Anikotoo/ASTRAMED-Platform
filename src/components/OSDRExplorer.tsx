@@ -47,6 +47,7 @@ function normalizeFiles(payload: any): StudyFile[] {
       url,
       type: textOf(item.category, item.file_type, item.data_type, item.type, item.file_category),
       size: (() => { const bytes = Number(item.file_size ?? item.size); return Number.isFinite(bytes) && bytes > 0 ? (bytes >= 1073741824 ? `${(bytes / 1073741824).toFixed(1)} GB` : bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${(bytes / 1024).toFixed(1)} KB`) : textOf(item.file_size, item.size); })(),
+      restricted: Boolean(item.restricted),
       source: item
     };
   }).filter((file: StudyFile) => file.url || file.name);
