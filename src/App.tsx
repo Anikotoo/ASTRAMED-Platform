@@ -233,6 +233,7 @@ export default function App() {
       {!isLoadingInitial && showWearableStartGate && (
         <WearableStartGate
           onConnect={() => { setActiveSection('smartwatch'); setShowWearableStartGate(false); }}
+          onPhone={() => { setActiveSection('yoma'); setShowWearableStartGate(false); }}
           onVirtual={() => { setActiveSection('smartwatch'); setShowWearableStartGate(false); }}
           onContinue={() => setShowWearableStartGate(false)}
         />
