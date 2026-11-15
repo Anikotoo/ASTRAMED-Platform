@@ -52,7 +52,8 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
     const quad = crewReadings.find(r => r.parameter === 'muscle_strength_quad')?.value || '--';
     const sleep = crewReadings.find(r => r.parameter === 'sleep_duration')?.value || '--';
     const hasAlert = alerts.some(a => a.crewId === crewId);
-    return { hr, sys, quad, sleep, hasAlert };
+    const hasData = crewReadings.length > 0;
+    return { hr, sys, quad, sleep, hasAlert, hasData };
   };
 
   return (
@@ -195,7 +196,9 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
                       <div className="text-[11px] text-cyan-400 font-mono">{crew.role}</div>
                     </div>
                   </div>
-                  {vitals.hasAlert ? (
+                  {!vitals.hasData ? (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">NO DATA</span>
+                  ) : vitals.hasAlert ? (
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-400 border border-amber-800">
                       ALERT
                     </span>
@@ -226,7 +229,7 @@ export const MissionOverview: React.FC<MissionOverviewProps> = ({
                 </div>
 
                 <div className="mt-2 text-[10px] font-mono text-slate-500">
-                  Day {crew.daysInOrbit} in orbit • {crew.evaCount} EVAs
+                  Orbit days: {crew.daysInOrbit ?? 'Not supplied'} • EVAs: {crew.evaCount ?? 'Not supplied'}
                 </div>
               </div>
             );
