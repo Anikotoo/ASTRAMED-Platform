@@ -428,6 +428,105 @@ const GEMINI_MODEL =
   process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 // ============================================================
+// EXTERNAL SPACE-WEATHER DATA (separate from crew telemetry)
+// ============================================================
+
+async function fetchExternalJson(url: string): Promise<any> {
+  const response = await fetch(url, {
+    headers: { Accept: 'application/json', 'User-Agent': 'ASTRAMED-space-weather-dashboard' },
+    signal: AbortSignal.timeout(12000)
+  });
+  if (!response.ok) throw new Error(\`Upstream returned HTTP \${response.status}\`);
+  return response.json();
+}
+
+function latestNoaaRecord(payload: any): Record<string, any> | null {
+  if (Array.isArray(payload)) {
+    if (payload.length === 0) return null;
+    if (Array.isArray(payload[0])) {
+      const headers = payload[0].map((item: unknown) => String(item));
+      const rows = payload.slice(1).filter((row: any) => Array.isArray(row));
+      const row = rows[rows.length - 1];
+      return row ? Object.fromEntries(headers.map((key: string, index: number) => [key, row[index]])) : null;
+    }
+    const rows = payload.filter((item: any) => item && typeof item === 'object');
+    return rows.length ? rows[rows.length - 1] : null;
+  }
+  return payload && typeof payload === 'object' ? payload : null;
+}
+
+function firstNumericField(record: Record<string, any> | null, aliases: string[]): number | null {
+  if (!record) return null;
+  const wanted = new Set(aliases.map(key => key.toLowerCase().replace(/[^a-z0-9]/g, '')));
+  for (const [key, value] of Object.entries(record)) {
+    if (wanted.has(key.toLowerCase().replace(/[^a-z0-9]/g, ''))) {
+      const parsed = Number(value);
+      if (value !== '' && value !== null && Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return null;
+}
+
+app.get('/api/space-weather', async (_req: Request, res: Response) => {
+  const now = new Date();
+  const endDate = now.toISOString().slice(0, 10);
+  const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const nasaUrl = new URL('https://ccmc.gsfc.nasa.gov/DONKI/notifications');
+  nasaUrl.searchParams.set('startDate', startDate);
+  nasaUrl.searchParams.set('endDate', endDate);
+  nasaUrl.searchParams.set('type', 'all');
+
+  const kpUrl = 'https://services.swpc.noaa.gov/products/summary/planetary-k-index.json';
+  const windUrl = 'https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json';
+  const [nasaResult, kpResult, windResult] = await Promise.allSettled([
+    fetchExternalJson(nasaUrl.toString()),
+    fetchExternalJson(kpUrl),
+    fetchExternalJson(windUrl)
+  ]);
+
+  const nasaEvents = nasaResult.status === 'fulfilled' && Array.isArray(nasaResult.value)
+    ? nasaResult.value.slice(0, 20).map((event: any) => ({
+        type: safeText(event.messageType || event.type || 'Space weather notice', 80),
+        issuedAt: safeText(event.messageIssueTime || event.issueTime || '', 80),
+        body: safeText(event.messageBody || event.message || 'Open the original NASA record for details.', 1600),
+        url: /^https?:\/\//i.test(String(event.messageURL || event.url || ''))
+          ? String(event.messageURL || event.url) : 'https://ccmc.gsfc.nasa.gov/DONKI/'
+      }))
+    : [];
+
+  const kpRecord = kpResult.status === 'fulfilled' ? latestNoaaRecord(kpResult.value) : null;
+  const windRecord = windResult.status === 'fulfilled' ? latestNoaaRecord(windResult.value) : null;
+  const kpIndex = firstNumericField(kpRecord, ['kp_index', 'Kp', 'estimated_kp', 'planetary_k_index']);
+  const solarWindSpeed = firstNumericField(windRecord, ['Wind Speed', 'wind_speed', 'speed', 'solar_wind_speed']);
+  const kpTimestamp = kpRecord ? safeText(kpRecord.time_tag || kpRecord.time || '', 80) : '';
+  const windTimestamp = windRecord ? safeText(windRecord.time_tag || windRecord.time || '', 80) : '';
+
+  res.setHeader('Cache-Control', 'public, max-age=180');
+  res.json({
+    fetchedAt: now.toISOString(),
+    nasa: {
+      status: nasaResult.status === 'fulfilled' ? 'online' : 'unavailable',
+      events: nasaEvents,
+      source: 'NASA Community Coordinated Modeling Center — DONKI',
+      sourceUrl: 'https://ccmc.gsfc.nasa.gov/DONKI/',
+      error: nasaResult.status === 'rejected' ? 'NASA DONKI could not be reached. Retry later.' : null
+    },
+    noaa: {
+      status: kpResult.status === 'fulfilled' || windResult.status === 'fulfilled' ? 'online' : 'unavailable',
+      kpIndex: kpIndex !== null && kpIndex >= 0 && kpIndex <= 9 ? kpIndex : null,
+      kpTimestamp,
+      solarWindSpeed: solarWindSpeed !== null && solarWindSpeed >= 0 && solarWindSpeed < 3000 ? solarWindSpeed : null,
+      windTimestamp,
+      kpSourceUrl: 'https://services.swpc.noaa.gov/products/summary/planetary-k-index.json',
+      windSourceUrl: 'https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json',
+      error: kpResult.status === 'rejected' && windResult.status === 'rejected'
+        ? 'NOAA SWPC data could not be reached. Retry later.' : null
+    },
+    dataBoundary: 'External space-weather context only. These values are not crew telemetry, personal radiation dose, cabin conditions, or medical readings.'
+  });
+});
+
+// ============================================================
 // SYSTEM STATUS
 // ============================================================
 
