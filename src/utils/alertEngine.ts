@@ -35,6 +35,7 @@ export function evaluateAlerts(
   }
 
   for (const reading of latestMap.values()) {
+    if (reading.status === 'unverified') continue;
     let severity: AlertSeverity | null = null;
     let title = '';
     let explanation = '';
