@@ -331,7 +331,7 @@ export default function App() {
               )}
 
               {activeSection === 'yoma' && (
-                <YomaMovement assessments={movementAssessments} onRefresh={fetchData} />
+                <YomaMovement assessments={movementAssessments} crewList={crewList} onRefresh={fetchData} />
               )}
 
               {activeSection === 'settings' && (
