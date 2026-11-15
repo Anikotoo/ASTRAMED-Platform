@@ -64,7 +64,7 @@ export const MissionReportModal: React.FC<MissionReportModalProps> = ({
                   Astronaut Physiological Status Dossier
                 </h1>
                 <div className="text-xs text-slate-400 font-mono mt-1">
-                  Mission: <strong className="text-slate-200">{missionName}</strong> • Orbit Day: {selectedCrew?.daysInOrbit} • Generated: {new Date().toLocaleDateString()}
+                  Mission: <strong className="text-slate-200">{missionName}</strong> • Orbit Day: {selectedCrew?.daysInOrbit ?? 'Not supplied'} • Generated: {new Date().toLocaleDateString()}
                 </div>
               </div>
               <div className="text-right font-mono text-[11px] text-slate-400">
@@ -146,15 +146,13 @@ export const MissionReportModal: React.FC<MissionReportModalProps> = ({
             )}
           </div>
 
-          {/* Section 4: Relevant Scientific Evidence Base */}
+          {/* Section 4: Verified Scientific Evidence */}
           <div className="space-y-2">
             <h3 className="font-mono text-xs font-bold uppercase text-cyan-400 border-b border-slate-800 pb-1">
-              4. NASA OSDR &amp; Europe PMC Scientific References
+              4. Verified Scientific Evidence
             </h3>
             <div className="space-y-1.5 text-[11px] font-mono text-slate-400 bg-slate-950 p-3 rounded-lg border border-slate-800">
-              <div>• <strong>OSD-341:</strong> Multi-Omics Analysis of Muscle Atrophy during Long-Duration Spaceflight (Nature Comms, 2024). DOI: 10.1038/s41467-024-48219-w</div>
-              <div>• <strong>MED/37882910:</strong> Cardiovascular Remodeling and Orthostatic Intolerance in Microgravity (Circulation, 2023). DOI: 10.1161/CIRCGEN.123.004112</div>
-              <div>• <strong>OSD-579:</strong> Bone Mineral Density Kinetics and Trabecular Microarchitecture Loss in Orbital Crew (JBMR, 2024). DOI: 10.1002/jbmr.4912</div>
+              No study-specific source records are attached to this report. Add verified NASA OSDR or Europe PMC records through the Research Library before citing research here.
             </div>
           </div>
 
