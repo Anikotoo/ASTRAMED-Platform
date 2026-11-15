@@ -7,7 +7,6 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   Trash2, 
-  Download, 
   Database,
   History,
   Info,
