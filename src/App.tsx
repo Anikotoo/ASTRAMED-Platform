@@ -27,6 +27,7 @@ import { AlertsCenterModal } from './views/AlertsCenterModal';
 import { YomaMovement } from './views/YomaMovement';
 import { CrewProfiles } from './views/CrewProfiles';
 import { VirtualSmartwatch } from './views/VirtualSmartwatch';
+import { WearableStartGate } from './components/WearableStartGate';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<NavSection>('overview');
@@ -41,6 +42,7 @@ export default function App() {
   const [isGeminiActive, setIsGeminiActive] = useState<boolean>(false);
   const [sensorIngestConfigured, setSensorIngestConfigured] = useState<boolean>(false);
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
+  const [showWearableStartGate, setShowWearableStartGate] = useState<boolean>(true);
 
   // Modals state
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
@@ -222,6 +224,14 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans select-none">
+      {!isLoadingInitial && showWearableStartGate && (
+        <WearableStartGate
+          onConnect={() => { setActiveSection('smartwatch'); setShowWearableStartGate(false); }}
+          onVirtual={() => { setActiveSection('smartwatch'); setShowWearableStartGate(false); }}
+          onContinue={() => setShowWearableStartGate(false)}
+        />
+      )}
+
       {/* Left Mission Navigation Sidebar */}
       <Sidebar
         activeSection={activeSection}
