@@ -301,8 +301,8 @@ function summarizeReadings(readings: HealthReading[]) {
       minimumInIncludedRecords: values.length ? Math.min(...values) : null,
       maximumInIncludedRecords: values.length ? Math.max(...values) : null,
       changeFromEarliestIncludedRecord: delta,
-      measurementSources: Array.from(new Set(ordered.map(item => item.source).filter(Boolean)),
-      verificationStatuses: Array.from(new Set(ordered.map(item => item.status || 'unverified'))))
+      measurementSources: Array.from(new Set(ordered.map(item => item.source).filter(Boolean))),
+      verificationStatuses: Array.from(new Set(ordered.map(item => item.status || 'unverified')))
     };
   });
 }
