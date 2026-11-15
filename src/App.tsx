@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { LayoutDashboard, UserRound, LineChart, Bot, Menu } from 'lucide-react';
 import { 
   CrewMember, 
   HealthReading, 
@@ -224,7 +225,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans select-none">
+    <div className="flex h-[100dvh] w-full max-w-[100vw] overflow-hidden bg-slate-950 text-slate-100 font-sans select-none">
       {!isLoadingInitial && showWearableStartGate && (
         <WearableStartGate
           onConnect={() => { setActiveSection('smartwatch'); setShowWearableStartGate(false); }}
@@ -264,7 +265,7 @@ export default function App() {
         />
 
         {/* View Content Area */}
-        <main className="astramed-workspace flex-1 overflow-y-auto p-6 min-h-0 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/60">
+        <main className="astramed-workspace flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 lg:p-6 pb-24 md:pb-6 min-h-0 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/60">
           {isLoadingInitial ? (
             <div className="h-full flex flex-col items-center justify-center space-y-3 text-cyan-400 font-mono text-xs">
               <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
@@ -374,6 +375,23 @@ export default function App() {
           )}
         </main>
       </div>
+
+      <nav aria-label="Mobile navigation" className="md:hidden fixed bottom-0 inset-x-0 z-40 grid grid-cols-5 border-t border-slate-800 bg-slate-950/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
+        {[
+          { id: 'overview' as NavSection, label: 'Home', Icon: LayoutDashboard },
+          { id: 'crew_body' as NavSection, label: 'Crew', Icon: UserRound },
+          { id: 'trends' as NavSection, label: 'Trends', Icon: LineChart },
+          { id: 'ai_assistant' as NavSection, label: 'AI', Icon: Bot }
+        ].map(({ id, label, Icon }) => (
+          <button key={id} onClick={() => setActiveSection(id)} aria-current={activeSection === id ? 'page' : undefined}
+            className={`min-h-14 flex flex-col items-center justify-center gap-1 text-[10px] font-medium ${activeSection === id ? 'text-cyan-300' : 'text-slate-400'}`}>
+            <Icon className="h-5 w-5" />{label}
+          </button>
+        ))}
+        <button onClick={() => setIsMobileNavOpen(true)} className="min-h-14 flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-slate-400">
+          <Menu className="h-5 w-5" />More
+        </button>
+      </nav>
 
       {/* Auxiliary Modals */}
       {isAlertsOpen && (
