@@ -20,13 +20,13 @@ const getProfileReference = (
 ): ProfileReference | null => {
   switch (parameter) {
     case 'resting_heart_rate':
-      return { value: crew.baseline.restingHeartRate, unit: 'bpm', label: 'Profile resting reference' };
+      return Number.isFinite(crew.baseline?.restingHeartRate) ? { value: crew.baseline!.restingHeartRate!, unit: 'bpm', label: 'Profile resting reference' } : null;
     case 'blood_pressure_sys':
-      return { value: crew.baseline.bloodPressureSys, unit: 'mmHg', label: 'Profile systolic reference' };
+      return Number.isFinite(crew.baseline?.bloodPressureSys) ? { value: crew.baseline!.bloodPressureSys!, unit: 'mmHg', label: 'Profile systolic reference' } : null;
     case 'body_weight':
-      return { value: crew.baseline.weightKg, unit: 'kg', label: 'Profile weight reference' };
+      return Number.isFinite(crew.baseline?.weightKg) ? { value: crew.baseline!.weightKg!, unit: 'kg', label: 'Profile weight reference' } : null;
     case 'bone_density_tscore':
-      return { value: crew.baseline.boneDensityTScore, unit: 'T-score', label: 'Profile bone-density reference' };
+      return Number.isFinite(crew.baseline?.boneDensityTScore) ? { value: crew.baseline!.boneDensityTScore!, unit: 'T-score', label: 'Profile bone-density reference' } : null;
     default:
       return null;
   }
