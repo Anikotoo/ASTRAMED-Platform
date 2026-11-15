@@ -25,12 +25,12 @@ function normalizeStudies(payload: any): Study[] {
   const raw = findArrays(payload, ['studies', 'study_hits', 'results', 'items', 'hits']);
   const candidates = raw.flatMap((item: any) => item?._source ? [item._source] : [item]);
   return candidates.map((item: any) => {
-    const id = textOf(item.accession, item.osd_accession, item.study_accession, item.osd_id, item.id, item._id).match(/(?:OSD-?)?\d+(?:\.\d+)?/i)?.[0] || '';
+    const id = textOf(item.Accession, item.accession, item.osd_accession, item.study_accession, item.osd_id, item.id, item._id).match(/(?:OSD-?)?\d+(?:\.\d+)?/i)?.[0] || '';
     const normalizedId = id ? (id.toUpperCase().startsWith('OSD') ? id.toUpperCase().replace(/^OSD(?=\d)/, 'OSD-') : `OSD-${id}`) : '';
     return {
       id: normalizedId,
-      title: textOf(item.study_title, item.title, item.name, item.study_name, item.label) || (normalizedId ? `NASA OSDR study ${normalizedId}` : 'Untitled study'),
-      description: textOf(item.study_description, item.description, item.summary),
+      title: textOf(item['Study Title'], item.study_title, item.title, item.name, item.study_name, item.label) || (normalizedId ? `NASA OSDR study ${normalizedId}` : 'Untitled study'),
+      description: textOf(item['Study Description'], item.study_description, item.description, item.summary),
       organism: textOf(item.organism, item.organisms, item['study.characteristics.organism']),
       source: item
     };
@@ -45,7 +45,7 @@ function normalizeFiles(payload: any): StudyFile[] {
     return {
       name: textOf(item.file_name, item.filename, item.name, item.label, item.remote_url) || 'NASA OSDR file',
       url,
-      type: textOf(item.file_type, item.data_type, item.type, item.category),
+      type: textOf(item.file_type, item.data_type, item.type, item.category, item.file_category),
       size: textOf(item.file_size, item.size),
       source: item
     };
