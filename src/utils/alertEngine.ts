@@ -1,8 +1,8 @@
 import { HealthReading, HealthAlert, MissionSettings, AlertSeverity } from '../types/astramed';
 
 export const DEFAULT_MISSION_SETTINGS: MissionSettings = {
-  missionName: 'Astra-X ISS Expedition 75',
-  missionStartDate: '2026-03-15T00:00:00.000Z',
+  missionName: 'ASTRAMED Mission Workspace',
+  missionStartDate: '',
   thresholds: {
     heartRateHigh: 110,
     heartRateLow: 45,
