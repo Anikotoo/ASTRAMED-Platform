@@ -28,8 +28,7 @@ export const HealthTrends: React.FC<HealthTrendsProps> = ({
   readings
 }) => {
   const activeCrew = selectedCrew || crewList[0];
-  if (!activeCrew) return <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-8 text-center text-xs text-slate-400">No crew profile is available. Add a real or anonymised crew profile before viewing health trends.</div>;
-  const unverifiedCount = readings.filter(reading => reading.crewId === activeCrew.id && reading.status === 'unverified').length;
+  const unverifiedCount = activeCrew ? readings.filter(reading => reading.crewId === activeCrew.id && reading.status === 'unverified').length : 0;
   const [selectedParam, setSelectedParam] = useState<HealthParameter>('heart_rate');
   const [timeRangeDays, setTimeRangeDays] = useState<number>(0);
   const [compareCrewId, setCompareCrewId] = useState<string | null>(null);
@@ -142,6 +141,8 @@ export const HealthTrends: React.FC<HealthTrendsProps> = ({
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  if (!activeCrew) return <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-8 text-center text-xs text-slate-400">No crew profile is available. Add a real or anonymised crew profile before viewing health trends.</div>;
 
   return (
     <div className="space-y-6">
