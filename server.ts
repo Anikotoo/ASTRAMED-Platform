@@ -471,10 +471,11 @@ app.get('/api/space-weather', async (_req: Request, res: Response) => {
   const now = new Date();
   const endDate = now.toISOString().slice(0, 10);
   const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const nasaUrl = new URL('https://ccmc.gsfc.nasa.gov/DONKI/notifications');
+  const nasaUrl = new URL('https://api.nasa.gov/DONKI/notifications');
   nasaUrl.searchParams.set('startDate', startDate);
   nasaUrl.searchParams.set('endDate', endDate);
   nasaUrl.searchParams.set('type', 'all');
+  nasaUrl.searchParams.set('api_key', process.env.NASA_API_KEY || 'DEMO_KEY');
 
   const kpUrl = 'https://services.swpc.noaa.gov/products/summary/planetary-k-index.json';
   const windUrl = 'https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json';
