@@ -49,7 +49,7 @@ export type HealthParameter =
   | 'cabin_co2'
   | 'cabin_pressure';
 
-export type MeasurementStatus = 'normal' | 'attention' | 'critical' | 'unverified';
+export type MeasurementStatus = 'normal' | 'attention' | 'critical' | 'unverified' | 'verified';
 
 export type DataSource = 'biomed_telemetry' | 'cycle_ergometer' | 'aRED_exercise' | 'clinical_exam' | 'manual_entry' | 'user_import' | 'sensor_gateway' | 'wearable_sensor';
 
