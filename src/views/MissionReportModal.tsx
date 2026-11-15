@@ -94,7 +94,7 @@ export const MissionReportModal: React.FC<MissionReportModalProps> = ({
               </div>
               <div>
                 <span className="text-[10px] text-slate-500 block">EVAs PERFORMED</span>
-                <span className="font-bold text-white">{selectedCrew?.evaCount} Spacewalks</span>
+                <span className="font-bold text-white">{selectedCrew?.evaCount ?? 'Not supplied'} Spacewalks</span>
               </div>
             </div>
           </div>
