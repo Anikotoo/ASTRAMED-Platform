@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChallengeResourcesPanel } from '../components/ChallengeResourcesPanel';
 import { Globe2, X, Activity, AlertCircle, Radio } from 'lucide-react';
 
 interface EnvironmentMonitorModalProps { onClose: () => void; }
@@ -20,6 +21,8 @@ export const EnvironmentMonitorModal: React.FC<EnvironmentMonitorModalProps> = (
         ].map(([label, unit, source]) => <div key={label} className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2"><div className="flex items-center justify-between"><span className="text-xs text-slate-300">{label}</span><Activity className="w-4 h-4 text-slate-500" /></div><div className="text-xl font-mono text-slate-500">— <span className="text-xs">{unit}</span></div><div className="text-[10px] text-slate-500">Expected source: {source}</div><div className="text-[10px] text-amber-400 flex items-center gap-1"><Radio className="w-3 h-3" /> NOT CONNECTED</div></div>)}
       </div>
       <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800 text-[11px] text-slate-400">Connect a real sensor gateway or import a source-identified dataset to populate these fields. Historical research values must not be displayed as current spacecraft conditions.</div>
+      <ChallengeResourcesPanel compact />
+      <p className="text-[10px] leading-relaxed text-slate-500">NASA does not endorse any non-U.S. Government entity and is not responsible for information on non-U.S. Government websites. Follow the data-use parameters of each non-U.S. Government source.</p>
     </div>
   </div>
 );
