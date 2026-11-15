@@ -70,7 +70,32 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
   const [liveConfidence, setLiveConfidence] = useState(0);
   const [liveAngles, setLiveAngles] = useState({ shoulder: null as number | null, elbow: null as number | null, knee: null as number | null });
   const [lastSaved, setLastSaved] = useState<MovementAssessment | null>(null);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);\n  const lastAnnouncedPhaseRef = useRef<string>('');\n\n  function speakInstruction(text: string) {\n    if (!voiceEnabled || !('speechSynthesis' in window)) return;\n    window.speechSynthesis.cancel();\n    const utterance = new SpeechSynthesisUtterance(text);\n    utterance.rate = 0.92;\n    utterance.onstart = () => undefined;\n    window.speechSynthesis.speak(utterance);\n  }\n\n  useEffect(() => {\n    if (status !== 'running') return;\n    if (lastAnnouncedPhaseRef.current === activePhase.name) return;\n    lastAnnouncedPhaseRef.current = activePhase.name;\n    speakInstruction(activePhase.instruction);\n  }, [activePhase.name, status, voiceEnabled]);\n\n  useEffect(() => {\n    if (status === 'running' && elapsed >= 300) speakInstruction('The five minute movement test is complete. Please review and save the assessment.');\n  }, [elapsed, status, voiceEnabled]);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const lastAnnouncedPhaseRef = useRef<string>('');
+  const activePhase = PHASES.find(phase => elapsed >= phase.start && elapsed < phase.end) || PHASES[PHASES.length - 1];
+
+  function speakInstruction(text: string) {
+    if (!voiceEnabled || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.92;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  useEffect(() => {
+    if (status !== 'running' || !voiceEnabled) return;
+    if (lastAnnouncedPhaseRef.current === activePhase.name) return;
+    lastAnnouncedPhaseRef.current = activePhase.name;
+    speakInstruction(activePhase.instruction);
+  }, [activePhase.name, status, voiceEnabled]);
+
+  const completionAnnouncedRef = useRef(false);
+  useEffect(() => {
+    if (status === 'running' && elapsed >= 300 && !completionAnnouncedRef.current) {
+      completionAnnouncedRef.current = true;
+      speakInstruction('The five minute movement test is complete. Please review and save the assessment.');
+    }
+  }, [elapsed, status, voiceEnabled]);
 
   const subjectAssessments = assessments.filter(item => item.subjectId === subjectId.trim());
   const accepted = subjectAssessments.filter(item => item.qualityStatus === 'accepted' && !item.simulated && Date.now() - new Date(item.completedAt).getTime() <= 30 * 86400000);
@@ -286,6 +311,9 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
   }
 
   function reset() {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    lastAnnouncedPhaseRef.current = '';
+    completionAnnouncedRef.current = false;
     stopCamera(); setStatus('idle'); setElapsed(0); setMessage(''); setLiveConfidence(0);
     setLiveAngles({ shoulder: null, elbow: null, knee: null });
   }
