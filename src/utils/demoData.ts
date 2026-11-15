@@ -59,7 +59,7 @@ const makeSeries = (crewId: string, crewIndex: number): HealthReading[] => {
         source: 'manual_entry',
         reportedSource: 'ASTRAMED synthetic demo generator',
         measurementMethod: 'Synthetic demonstration fixture — not measured by a sensor',
-        status: 'normal',
+        status: 'unverified',
         notes: 'DEMO ONLY: fictional sample value for interface demonstration. Not a real astronaut measurement.'
       });
     });
