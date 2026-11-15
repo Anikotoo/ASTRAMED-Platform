@@ -117,12 +117,12 @@ function readDb(): AstramedDatabase {
             return {
               ...reading,
               reportedSource: reading.reportedSource || reading.source,
-              source: 'user_import',
-              status: 'unverified'
+              source: 'user_import' as const,
+              status: 'unverified' as const
             };
           }
           if (reading.source === 'manual_entry' && reading.status !== 'verified') {
-            return { ...reading, status: 'unverified' };
+            return { ...reading, status: 'unverified' as const };
           }
           return reading;
         });
