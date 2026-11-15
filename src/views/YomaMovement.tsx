@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Activity, Camera, CheckCircle2, Clock3, Loader2, Play, RefreshCw, ShieldAlert, StopCircle, VideoOff } from 'lucide-react';
 import { YOLO } from '@ultralytics/yolo';
-import { MovementAssessment } from '../types/astramed';
+import { MovementAssessment, CrewMember } from '../types/astramed';
 
 const MODEL_URL = 'https://huggingface.co/unileon-robotics/YOLO26-ONNX/resolve/b2ac4fc/yolo26n-pose.onnx';
 const MODEL_NAME = 'YOLO26n-Pose';
@@ -40,10 +40,11 @@ function range(values: number[]): number | null {
 
 interface Props {
   assessments: MovementAssessment[];
+  crewList: CrewMember[];
   onRefresh: () => Promise<void> | void;
 }
 
-export const YomaMovement: React.FC<Props> = ({ assessments, onRefresh }) => {
+export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -57,8 +58,8 @@ export const YomaMovement: React.FC<Props> = ({ assessments, onRefresh }) => {
   const confidenceRef = useRef<number[]>([]);
   const validFramesRef = useRef(0);
   const rejectedFramesRef = useRef(0);
-  const [subjectId, setSubjectId] = useState('crew-anonymous-01');
-  const [subjectLabel, setSubjectLabel] = useState('Anonymous crew member');
+  const [subjectId, setSubjectId] = useState(crewList[0]?.id || 'crew-anonymous-01');
+  const [subjectLabel, setSubjectLabel] = useState(crewList[0]?.name || 'Anonymous crew member');
   const [status, setStatus] = useState<'idle' | 'loading' | 'running' | 'saving' | 'done' | 'error'>('idle');
   const [elapsed, setElapsed] = useState(0);
   const inferenceIntervalRef = useRef<number | null>(null);
@@ -336,7 +337,18 @@ export const YomaMovement: React.FC<Props> = ({ assessments, onRefresh }) => {
         <div className="xl:col-span-2 space-y-4">
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-3">
             <h2 className="text-sm font-bold text-white font-mono">ASSESSMENT SUBJECT</h2>
-            <label className="block text-[10px] text-slate-400 font-mono">ANONYMOUS SUBJECT ID</label>
+            {crewList.length > 0 && <>
+              <label className="block text-[10px] text-slate-400 font-mono">LINK TO CREW PROFILE (OPTIONAL)</label>
+              <select value={crewList.some(member => member.id === subjectId) ? subjectId : ''} onChange={event => {
+                const member = crewList.find(item => item.id === event.target.value);
+                if (member) { setSubjectId(member.id); setSubjectLabel(member.name); }
+                else { setSubjectId('crew-anonymous-01'); setSubjectLabel('Anonymous crew member'); }
+              }} disabled={status === 'running' || status === 'loading'} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+                <option value="">Anonymous subject (not linked to crew)</option>
+                {crewList.map(member => <option key={member.id} value={member.id}>{member.name} • {member.callsign}</option>)}
+              </select>
+            </>}
+            <label className="block text-[10px] text-slate-400 font-mono">SUBJECT ID</label>
             <input value={subjectId} onChange={event => setSubjectId(event.target.value)} disabled={status === 'running' || status === 'loading'} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white" />
             <label className="block text-[10px] text-slate-400 font-mono">DISPLAY LABEL</label>
             <input value={subjectLabel} onChange={event => setSubjectLabel(event.target.value)} disabled={status === 'running' || status === 'loading'} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white" />
