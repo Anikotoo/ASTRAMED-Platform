@@ -4,6 +4,7 @@ import { Camera, Link2, QrCode, Smartphone, Volume2, Wifi, WifiOff } from 'lucid
 interface Props {
   onCameraStream: (stream: MediaStream | null) => void;
   onSpeakReady?: (speak: ((text: string) => boolean) | null) => void;
+  onNeckbandStateSender?: (send: ((state: any) => void) | null) => void;
 }
 
 const ICE_SERVERS: RTCConfiguration = {
@@ -32,7 +33,7 @@ async function readJson(response: Response): Promise<any> {
   return data;
 }
 
-export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakReady }) => {
+export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakReady, onNeckbandStateSender }) => {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<RTCDataChannel | null>(null);
   const hostTokenRef = useRef('');
@@ -60,6 +61,7 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
     hostTokenRef.current = '';
     onCameraStream(null);
     onSpeakReady?.(null);
+    onNeckbandStateSender?.(null);
     setStatus('idle');
     setPairId('');
     setPin('');
@@ -72,6 +74,7 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
     pcRef.current?.close();
     onCameraStream(null);
     onSpeakReady?.(null);
+    onNeckbandStateSender?.(null);
   }, []);
 
   async function createPairing() {
@@ -92,10 +95,14 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
       channelRef.current = channel;
       channel.onopen = () => {
         onSpeakReady?.(speakOnPhone);
+        onNeckbandStateSender?.((state: any) => {
+          if (channel.readyState === 'open') channel.send(JSON.stringify({ type: 'neckband-state', state }));
+        });
         setStatus('connected');
         channel.send(JSON.stringify({ type: 'speak', text: 'Hello. ASTRAMED phone companion is connected. YOMA is ready to use your phone camera and speaker.' }));
       };
       channel.onclose = () => {
+        onNeckbandStateSender?.(null);
         if (pc.connectionState !== 'closed') setStatus('waiting');
       };
       pc.ontrack = event => {
