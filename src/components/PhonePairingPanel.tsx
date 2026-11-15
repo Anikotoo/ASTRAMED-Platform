@@ -3,6 +3,7 @@ import { Camera, Link2, QrCode, Smartphone, Volume2, Wifi, WifiOff } from 'lucid
 
 interface Props {
   onCameraStream: (stream: MediaStream | null) => void;
+  onSpeakReady?: (speak: ((text: string) => boolean) | null) => void;
 }
 
 const ICE_SERVERS: RTCConfiguration = {
@@ -49,12 +50,16 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
 
   function disconnect() {
     stopPolling();
+    const activePairId = pairId;
+    const activeHostToken = hostTokenRef.current;
+    if (activePairId && activeHostToken) void fetch(`/api/phone-pairing/${activePairId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${activeHostToken}` } }).catch(() => undefined);
     channelRef.current?.close();
     pcRef.current?.close();
     channelRef.current = null;
     pcRef.current = null;
     hostTokenRef.current = '';
     onCameraStream(null);
+    onSpeakReady?.(null);
     setStatus('idle');
     setPairId('');
     setPin('');
@@ -66,6 +71,7 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
     channelRef.current?.close();
     pcRef.current?.close();
     onCameraStream(null);
+    onSpeakReady?.(null);
   }, []);
 
   async function createPairing() {
@@ -85,6 +91,7 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakRead
       const channel = pc.createDataChannel('astramed-control');
       channelRef.current = channel;
       channel.onopen = () => {
+        onSpeakReady?.(speakOnPhone);
         setStatus('connected');
         channel.send(JSON.stringify({ type: 'speak', text: 'Hello. ASTRAMED phone companion is connected. YOMA is ready to use your phone camera and speaker.' }));
       };
