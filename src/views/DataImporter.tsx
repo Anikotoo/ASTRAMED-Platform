@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ImportedDataset, HealthReading } from '../types/astramed';
 import { parseCSV, parseJSON, ParseResult } from '../utils/dataParser';
+import { OSDRExplorer } from '../components/OSDRExplorer';
 import { 
   UploadCloud, 
   FileText, 
@@ -109,6 +110,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({
 
   return (
     <div className="space-y-6">
+      <OSDRExplorer />
+
       {/* Header Banner */}
       <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
