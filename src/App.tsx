@@ -26,6 +26,7 @@ import { MissionReportModal } from './views/MissionReportModal';
 import { AlertsCenterModal } from './views/AlertsCenterModal';
 import { YomaMovement } from './views/YomaMovement';
 import { CrewProfiles } from './views/CrewProfiles';
+import { VirtualSmartwatch } from './views/VirtualSmartwatch';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<NavSection>('overview');
@@ -186,7 +187,8 @@ export default function App() {
         enter_readings: 'enter_readings',
         settings: 'settings',
         yoma: 'yoma',
-        crew_profiles: 'crew_profiles'
+        crew_profiles: 'crew_profiles',
+        smartwatch: 'smartwatch'
       };
       if (sectionMap[action.targetSection]) {
         setActiveSection(sectionMap[action.targetSection]);
@@ -330,6 +332,10 @@ export default function App() {
 
               {activeSection === 'crew_profiles' && (
                 <CrewProfiles crewList={crewList} onSaved={fetchData} />
+              )}
+
+              {activeSection === 'smartwatch' && (
+                <VirtualSmartwatch crewList={crewList} selectedCrew={selectedCrew} />
               )}
 
               {activeSection === 'yoma' && (
