@@ -69,8 +69,9 @@ export const YomaMovement: React.FC<Props> = ({ assessments, onRefresh }) => {
   const [lastSaved, setLastSaved] = useState<MovementAssessment | null>(null);
 
   const activePhase = PHASES.find(phase => elapsed >= phase.start && elapsed < phase.end) || PHASES[PHASES.length - 1];
-  const accepted = assessments.filter(item => item.qualityStatus === 'accepted' && !item.simulated && Date.now() - new Date(item.completedAt).getTime() <= 30 * 86400000);
-  const rejected = assessments.filter(item => item.qualityStatus === 'rejected' && Date.now() - new Date(item.completedAt).getTime() <= 30 * 86400000);
+  const subjectAssessments = assessments.filter(item => item.subjectId === subjectId.trim());
+  const accepted = subjectAssessments.filter(item => item.qualityStatus === 'accepted' && !item.simulated && Date.now() - new Date(item.completedAt).getTime() <= 30 * 86400000);
+  const rejected = subjectAssessments.filter(item => item.qualityStatus === 'rejected' && Date.now() - new Date(item.completedAt).getTime() <= 30 * 86400000);
   const chronological = [...accepted].sort((a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime());
   const first = chronological[0];
   const latest = chronological[chronological.length - 1];
@@ -288,7 +289,7 @@ export const YomaMovement: React.FC<Props> = ({ assessments, onRefresh }) => {
         <h1 className="text-xl font-bold text-white mt-1">Five-minute movement test</h1>
         <p className="text-xs text-slate-400 mt-1">YOLO26 nano pose estimation runs in the browser. No wearable movement markers and no video upload are required.</p>
         <div className="mt-3 p-3 rounded-lg border border-amber-800/70 bg-amber-950/30 text-[11px] text-amber-200">
-          Prototype limitation: the pretrained model uses ordinary human COCO poses. It has not been validated for spacesuits, microgravity, restraint systems, occlusion or clinical range-of-motion measurement. This is a ground-prototype assessment only.
+          Model licence: the browser inference package and YOLO weights are published under AGPL-3.0; check licensing before any closed-source or commercial distribution. Prototype limitation: the pretrained model uses ordinary human COCO poses. It has not been validated for spacesuits, microgravity, restraint systems, occlusion or clinical range-of-motion measurement. This is a ground-prototype assessment only.
         </div>
       </div>
 
@@ -361,9 +362,9 @@ export const YomaMovement: React.FC<Props> = ({ assessments, onRefresh }) => {
       </div>
 
       <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2"><div><h2 className="text-sm font-bold text-white font-mono">30-DAY MOBILITY TIMELINE</h2><p className="text-[11px] text-slate-400">Only accepted, non-simulated camera assessments appear in comparisons.</p></div><span className="text-xs font-mono text-cyan-300">{chronological.length} accepted • {rejected.length} rejected</span></div>
+        <div className="flex items-center justify-between flex-wrap gap-2"><div><h2 className="text-sm font-bold text-white font-mono">30-DAY MOBILITY TIMELINE</h2><p className="text-[11px] text-slate-400">Only quality-accepted, non-simulated camera assessments for this subject appear in comparisons.</p></div><span className="text-xs font-mono text-cyan-300">{chronological.length} accepted • {rejected.length} rejected</span></div>
         {chronological.length === 0 ? (
-          <div className="py-8 text-center border border-dashed border-slate-700 rounded-lg"><Clock3 className="w-7 h-7 text-slate-500 mx-auto mb-2" /><p className="text-sm text-slate-300">No verified YOMA assessments yet</p><p className="text-xs text-slate-500 mt-1">Complete a five-minute camera test to establish the first baseline.</p></div>
+          <div className="py-8 text-center border border-dashed border-slate-700 rounded-lg"><Clock3 className="w-7 h-7 text-slate-500 mx-auto mb-2" /><p className="text-sm text-slate-300">No accepted YOMA assessments yet</p><p className="text-xs text-slate-500 mt-1">Complete a five-minute camera test to establish the first baseline.</p></div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
