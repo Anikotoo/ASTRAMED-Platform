@@ -31,7 +31,7 @@ async function readJson(response: Response): Promise<any> {
   return data;
 }
 
-export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream }) => {
+export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream, onSpeakReady }) => {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<RTCDataChannel | null>(null);
   const hostTokenRef = useRef('');
@@ -81,7 +81,7 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream }) => {
 
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
-      pc.addTransceiver('video', { direction: 'recvonly' });
+      pc.addTransceiver('video', { direction: 'sendrecv' });
       const channel = pc.createDataChannel('astramed-control');
       channelRef.current = channel;
       channel.onopen = () => {
@@ -116,7 +116,7 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream }) => {
       pollRef.current = window.setInterval(async () => {
         if (++attempts > 90 || !pcRef.current) {
           stopPolling();
-          if (status !== 'connected') setError('Pairing expired. Generate a new QR code and PIN.');
+          if (pc.connectionState !== 'connected') setError('Pairing expired. Generate a new QR code and PIN.');
           return;
         }
         try {
@@ -149,7 +149,7 @@ export const PhonePairingPanel: React.FC<Props> = ({ onCameraStream }) => {
     return false;
   }
 
-  const companionUrl = pairId ? `${window.location.origin}/phone-companion?pair=${encodeURIComponent(pairId)}` : '';
+  function speakOnPhone(text: string) {\n    if (channelRef.current?.readyState === 'open') { channelRef.current.send(JSON.stringify({ type: 'speak', text })); return true; }\n    return false;\n  }\n\n  const companionUrl = pairId ? `${window.location.origin}/phone-companion?pair=${encodeURIComponent(pairId)}` : '';
   const qrUrl = companionUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(companionUrl)}`
     : '';
