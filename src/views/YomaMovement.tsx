@@ -132,7 +132,8 @@ export const YomaMovement: React.FC<Props> = ({ assessments, crewList, onRefresh
         return;
       }
       const points = raw.map(point => [Number(point[0]), Number(point[1]), Number(point[2])] as Point);
-      const phase = PHASES.find(item => elapsed >= item.start && elapsed < item.end)?.name || 'Quality review';
+      const elapsedSeconds = Math.min(300, Math.floor((Date.now() - startMsRef.current) / 1000));
+      const phase = PHASES.find(item => elapsedSeconds >= item.start && elapsedSeconds < item.end)?.name || 'Quality review';
       const relevant = phase === 'Shoulder movement' ? [5, 6, 7, 8, 11, 12] :
         phase === 'Elbow movement' ? [5, 6, 7, 8, 9, 10] :
         phase === 'Knee movement' ? [11, 12, 13, 14, 15, 16] : [5, 6, 11, 12];
