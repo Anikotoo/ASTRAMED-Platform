@@ -6,7 +6,8 @@ import {
   HealthEvent, 
   ImportedDataset, 
   MissionSettings,
-  ResearchStudy
+  ResearchStudy,
+  MovementAssessment
 } from './types/astramed';
 import { DEFAULT_MISSION_SETTINGS } from './utils/alertEngine';
 import { TopStatusBar } from './components/TopStatusBar';
@@ -23,6 +24,7 @@ import { CrewComparisonModal } from './views/CrewComparisonModal';
 import { EnvironmentMonitorModal } from './views/EnvironmentMonitorModal';
 import { MissionReportModal } from './views/MissionReportModal';
 import { AlertsCenterModal } from './views/AlertsCenterModal';
+import { YomaMovement } from './views/YomaMovement';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<NavSection>('overview');
@@ -32,6 +34,7 @@ export default function App() {
   const [alerts, setAlerts] = useState<HealthAlert[]>([]);
   const [events, setEvents] = useState<HealthEvent[]>([]);
   const [importedDatasets, setImportedDatasets] = useState<ImportedDataset[]>([]);
+  const [movementAssessments, setMovementAssessments] = useState<MovementAssessment[]>([]);
   const [settings, setSettings] = useState<MissionSettings>(DEFAULT_MISSION_SETTINGS);
   const [isGeminiActive, setIsGeminiActive] = useState<boolean>(false);
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
@@ -58,7 +61,8 @@ export default function App() {
         eventsRes, 
         datasetsRes, 
         settingsRes, 
-        healthRes
+        healthRes,
+        movementRes
       ] = await Promise.all([
         fetch('/api/crew'),
         fetch('/api/readings'),
@@ -66,7 +70,8 @@ export default function App() {
         fetch('/api/events'),
         fetch('/api/datasets'),
         fetch('/api/settings'),
-        fetch('/api/health')
+        fetch('/api/health'),
+        fetch('/api/movement-assessments')
       ]);
 
       if (crewRes.ok) {
@@ -102,6 +107,10 @@ export default function App() {
         if (settingsData && settingsData.missionName) {
           setSettings(settingsData);
         }
+      }
+
+      if (movementRes.ok) {
+        setMovementAssessments(await movementRes.json());
       }
 
       if (healthRes.ok) {
@@ -172,7 +181,8 @@ export default function App() {
         research: 'research',
         importer: 'importer',
         enter_readings: 'enter_readings',
-        settings: 'settings'
+        settings: 'settings',
+        yoma: 'yoma'
       };
       if (sectionMap[action.targetSection]) {
         setActiveSection(sectionMap[action.targetSection]);
@@ -312,6 +322,10 @@ export default function App() {
                   selectedCrew={selectedCrew}
                   onReadingAdded={fetchData}
                 />
+              )}
+
+              {activeSection === 'yoma' && (
+                <YomaMovement assessments={movementAssessments} onRefresh={fetchData} />
               )}
 
               {activeSection === 'settings' && (
