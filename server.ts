@@ -100,7 +100,7 @@ app.post('/api/phone-pairing/:pairId/offer', (req: Request, res: Response) => {
 app.post('/api/phone-pairing/:pairId/join', (req: Request, res: Response) => {
   const pair = getPair(req, res); if (!pair) return;
   const submittedPin = String(req.body?.pin || '');
-  if (!/^\\d{6}$/.test(submittedPin) || !tokenMatches(submittedPin, pair.pin)) {
+  if (!/^\d{6}$/.test(submittedPin) || !tokenMatches(submittedPin, pair.pin)) {
     pair.pinAttempts += 1;
     if (pair.pinAttempts >= 8) { phonePairSessions.delete(pair.id); return res.status(429).json({ error: 'Too many incorrect PIN attempts. Start a new pairing.' }); }
     return res.status(401).json({ error: 'Incorrect pairing PIN.' });
