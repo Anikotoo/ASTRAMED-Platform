@@ -36,15 +36,6 @@ export const DataImporter: React.FC<DataImporterProps> = ({
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState<boolean>(false);
 
-  // Sample CSV template
-  const SAMPLE_CSV = `crew_id,parameter,value,unit,timestamp,source,notes
-crew-01,heart_rate,72,bpm,2026-05-04T08:00:00Z,biomed_telemetry,Morning baseline check
-crew-01,blood_pressure_sys,122,mmHg,2026-05-04T08:30:00Z,clinical_exam,Sphygmomanometer cross-check
-crew-02,heart_rate,105,bpm,2026-05-04T08:00:00Z,biomed_telemetry,Post-translation resting pulse
-crew-02,muscle_strength_quad,81.5,% baseline,2026-05-04T15:00:00Z,aRED_exercise,Max voluntary isometric test
-crew-03,sleep_duration,7.4,hours,2026-05-04T06:00:00Z,biomed_telemetry,Nominal sleep cycle
-crew-04,spo2,97,%,2026-05-04T08:00:00Z,biomed_telemetry,Pulse oximetry check`;
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -74,14 +65,6 @@ crew-04,spo2,97,%,2026-05-04T08:00:00Z,biomed_telemetry,Pulse oximetry check`;
       result = parseJSON(content);
     }
     setParseResult(result);
-  };
-
-  const handleLoadSample = () => {
-    setFileName('astronaut_telemetry_sample.csv');
-    setDatasetName('Expedition 75 Telemetry Sample');
-    setFormat('csv');
-    setFileContent(SAMPLE_CSV);
-    validateData(SAMPLE_CSV, 'csv');
   };
 
   const handleConfirmImport = async () => {
@@ -143,13 +126,7 @@ crew-04,spo2,97,%,2026-05-04T08:00:00Z,biomed_telemetry,Pulse oximetry check`;
             </p>
           </div>
 
-          <button
-            onClick={handleLoadSample}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-800 text-xs font-mono transition-colors cursor-pointer shrink-0"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Load Sample CSV</span>
-          </button>
+          <span className="text-[10px] text-slate-500 font-mono">REAL DATA IMPORT ONLY • NO DEMO RECORDS</span>
         </div>
       </div>
 
